@@ -21,8 +21,12 @@ criaturas de la zona anterior (un guardia bloquea el puente).
 
 ## Editar y ver los cambios
 
-- **El juego** (aspecto y lógica) está en `app/static/index.html`.
-  Gracias al volumen del `docker-compose.yml`, edita ese archivo, guarda y
+- **El juego** está dividido por responsabilidades en `app/static/`:
+  - `index.html`: estructura de la página y menú de inicio.
+  - `game.css`: estilos y diseño visual.
+  - `game.js`: mapa, movimiento, retos e inventario.
+  - `game-audio.js`: melodía original de 8 bits y controles de música.
+  Gracias al volumen del `docker-compose.yml`, edita los archivos, guarda y
   **refresca el navegador** (`Ctrl+F5`). No hace falta reconstruir.
 - **El backend en Python** (`app/main.py`, `app/retos.py`, `app/artefactos.py`)
   va dentro de la imagen, así que ahí sí reconstruye:
@@ -47,5 +51,9 @@ ctf-mundo/
     main.py              # servidor del juego (8080) + sitio objetivo (8081) + servicios TCP
     retos.py             # definición de los 12 retos y sus banderas CORPX{...}
     artefactos.py        # genera los archivos descargables (pcaps, hash, imagen)
-    static/index.html    # TODO el juego (mapa, sprites, captura, inventario)
+    static/
+      index.html         # estructura y menú de inicio
+      game.css           # estilos
+      game.js            # lógica del juego
+      game-audio.js      # música original y controles de audio
 ```
