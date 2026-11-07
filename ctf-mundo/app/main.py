@@ -25,13 +25,13 @@ def desc(n): return send_from_directory(os.path.join(B, "artefactos"), n, as_att
 obj = Flask("objetivo"); KEY = secrets.token_hex(8); ADMIN = secrets.token_hex(6)
 @obj.get("/")
 def home():
-    r = make_response('<h1>CorpX Intranet</h1><p>Bienvenido, agente. <a href="/portal">Portal</a></p>')
+    r = make_response('<h1>Hackémon Intranet</h1><p>Bienvenido, agente. <a href="/portal">Portal</a></p>')
     r.headers["X-Debug-Token"] = F[3]; return r
 @obj.get("/robots.txt")
 def robots(): return "User-agent: *\nDisallow: /archivo-secreto-7f3a\n", 200, {"Content-Type": "text/plain"}
 @obj.get("/archivo-secreto-7f3a")
 def sec(): return F[2] + "\n", 200, {"Content-Type": "text/plain"}
-FORM = '<h2>Portal CorpX</h2><form method=post>Usuario <input name=u><br>Clave <input name=c type=password><br><button>Entrar</button></form>'
+FORM = '<h2>Portal Hackémon</h2><form method=post>Usuario <input name=u><br>Clave <input name=c type=password><br><button>Entrar</button></form>'
 @obj.route("/portal", methods=["GET", "POST"])
 def portal():
     if request.method == "GET": return FORM
@@ -45,7 +45,7 @@ def portal():
 @obj.get("/backup", strict_slashes=False)
 def bk(): return "Acceso restringido", 403
 @obj.get("/backup/config.bak")
-def cfg(): return f"# respaldo\nDB_HOST=db.corpx.lab\nAPI_KEY={KEY}\n", 200, {"Content-Type": "text/plain"}
+def cfg(): return f"# respaldo\nDB_HOST=db.hackemon.lab\nAPI_KEY={KEY}\n", 200, {"Content-Type": "text/plain"}
 @obj.get("/api/flag")
 def apiflag():
     if request.headers.get("X-API-Key") == KEY: return F[11] + "\n"
@@ -61,8 +61,8 @@ def tcp(port, fn):
             try: fn(s.request, s.client_address[0], s.client_address[2])
             except Exception: pass
     threading.Thread(target=Q(("0.0.0.0", port), H).serve_forever, daemon=True).start()
-tcp(9003, lambda s, ip, ts: s.sendall(b"220 CorpX-FTP listo\r\n"))
-tcp(9007, lambda s, ip, ts: s.sendall(f"CORPX-BEACON/1.0 {F[1]}\r\n".encode()))
+tcp(9003, lambda s, ip, ts: s.sendall(b"220 Hackemon-FTP listo\r\n"))
+tcp(9007, lambda s, ip, ts: s.sendall(f"HACKEMON-BEACON/1.0 {F[1]}\r\n".encode()))
 SEQ, ev = [7003, 7001, 7002], defaultdict(list)
 for p in SEQ: tcp(p, lambda s, ip, ts, p=p: ev[ip].append((p, ts)))
 def door(s, ip, ts):

@@ -26,15 +26,15 @@ def w(n, p): wrpcap(os.path.join(O, n), p)
 open(os.path.join(O, "reto04_hash.txt"), "w").write(hashlib.md5(b"sunshine").hexdigest() + "\n")
 # 5 http
 body = f"usuario=admin&clave={F[5]}".encode()
-p1, t = sess(A, B, 40001, 80, [(True, b"GET / HTTP/1.1\r\nHost: intranet.corpx.lab\r\n\r\n"), (False, b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK")], 1.7e9)
-p2, t = sess(A, B, 40002, 80, [(True, b"POST /login HTTP/1.1\r\nHost: intranet.corpx.lab\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n\r\n" % len(body) + body), (False, b"HTTP/1.1 302 Found\r\nLocation: /panel\r\n\r\n")], t)
+p1, t = sess(A, B, 40001, 80, [(True, b"GET / HTTP/1.1\r\nHost: intranet.hackemon.lab\r\n\r\n"), (False, b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK")], 1.7e9)
+p2, t = sess(A, B, 40002, 80, [(True, b"POST /login HTTP/1.1\r\nHost: intranet.hackemon.lab\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n\r\n" % len(body) + body), (False, b"HTTP/1.1 302 Found\r\nLocation: /panel\r\n\r\n")], t)
 w("reto05_http.pcap", p1 + p2)
 # 6 ftp
-m = [(False, b"220 CorpX FTP\r\n"), (True, b"USER agente\r\n"), (False, b"331 Password required\r\n"), (True, b"PASS " + F[6].encode() + b"\r\n"), (False, b"230 Login ok\r\n"), (True, b"QUIT\r\n"), (False, b"221 Bye\r\n")]
+m = [(False, b"220 Hackemon FTP\r\n"), (True, b"USER agente\r\n"), (False, b"331 Password required\r\n"), (True, b"PASS " + F[6].encode() + b"\r\n"), (False, b"230 Login ok\r\n"), (True, b"QUIT\r\n"), (False, b"221 Bye\r\n")]
 w("reto06_ftp.pcap", sess(A, B, 40010, 21, m, 1.7e9)[0])
 # 7 dns
 b32 = base64.b32encode(F[7].encode()).decode().rstrip("="); ch = [b32[i:i + 12] for i in range(0, len(b32), 12)]
-names = ["www.google.com", "corpx.lab"] + [f"{i}-{c}.datos.corpx.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]
+names = ["www.google.com", "hackemon.lab"] + [f"{i}-{c}.datos.hackemon.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]
 names.insert(3, "cdn.example.org")
 w("reto07_dns.pcap", [Ether() / IP(src=A, dst="8.8.8.8") / UDP(sport=5300 + i, dport=53) / DNS(rd=1, qd=DNSQR(qname=n)) for i, n in enumerate(names)])
 # 9 icmp
@@ -48,7 +48,7 @@ w("reto12_knock.pcap", [Ether() / IP(src=A, dst=B) / TCP(sport=41000 + i, dport=
 # 8 imagen
 im = Image.new("RGB", (192, 192), "#16324f"); d = ImageDraw.Draw(im)
 for i in range(0, 192, 12): d.rectangle([i, 0, i + 6, 191], fill="#1f4f7a")
-d.ellipse([56, 56, 136, 136], fill="#f5a524"); d.text((64, 90), "CorpX", fill="#101c19")
-pi = PngInfo(); pi.add_text("Author", "agente-corpx"); pi.add_text("Comment", base64.b64encode(F[8].encode()).decode())
+d.ellipse([56, 56, 136, 136], fill="#f5a524"); d.text((64, 90), "Hackemon", fill="#101c19")
+pi = PngInfo(); pi.add_text("Author", "agente-hackemon"); pi.add_text("Comment", base64.b64encode(F[8].encode()).decode())
 im.save(os.path.join(O, "reto08_foto.png"), pnginfo=pi)
 print("artefactos listos:", sorted(os.listdir(O)))
