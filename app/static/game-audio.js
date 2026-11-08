@@ -71,7 +71,7 @@
     scheduleNotes();
     timer = window.setInterval(scheduleNotes, 25);
   }
-
+//audio
   async function stop() {
     if (!context || !enabled) return;
     enabled = false;
