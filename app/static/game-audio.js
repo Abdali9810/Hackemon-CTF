@@ -33,8 +33,19 @@
     bass: [36, 43, 41, 38],
     tempo: 0.32
   }));
+
+  // La música va "muy de fondo": el control al 100 % equivale a este volumen.
+  const MUSIC_MAX = 0.32;
+  const SFX_MAX = 1;
+  const VOL_KEY = 'ctfm1-volumen';
+  const volumes = { music: 0.6, sfx: 0.7 };
+  try { Object.assign(volumes, JSON.parse(localStorage.getItem(VOL_KEY)) || {}); } catch (e) {}
+
   let context;
-  let master;
+  let musicFade;   // encendido/apagado de la música
+  let musicBus;    // volumen de la música
+  let sfxBus;      // volumen de pasos, captura y ambiente
+  let noiseBuffer;
   let timer;
   let nextNoteTime = 0;
   let step = 0;
@@ -42,6 +53,10 @@
   let scene = 'menu';
   let menuIndex = 0;
   let track = menuTracks[menuIndex];
+  let ambient = null;
+  let birdTimer;
+
+  const midi = (n) => 440 * 2 ** ((n - 69) / 12);
 
   function getContext() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -51,14 +66,34 @@
 
     if (!context) {
       context = new AudioContext();
-      master = context.createGain();
-      master.gain.value = 0;
-      master.connect(context.destination);
+      musicBus = context.createGain();
+      musicBus.gain.value = volumes.music * MUSIC_MAX;
+      musicBus.connect(context.destination);
+      musicFade = context.createGain();
+      musicFade.gain.value = 0;
+      musicFade.connect(musicBus);
+      sfxBus = context.createGain();
+      sfxBus.gain.value = volumes.sfx * SFX_MAX;
+      sfxBus.connect(context.destination);
+      noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
     return context;
   }
 
-  function playNote(frequency, start, duration, waveform, volume) {
+  // Desbloquea el audio tras un gesto del usuario (los navegadores lo exigen).
+  async function unlock() {
+    const audio = getContext();
+    if (audio.state !== 'running') await audio.resume();
+    updateAmbient();
+  }
+
+  function ready() {
+    return context && context.state === 'running';
+  }
+
+  function playNote(frequency, start, duration, waveform, volume, out = musicFade) {
     const oscillator = context.createOscillator();
     const envelope = context.createGain();
     oscillator.type = waveform;
@@ -67,9 +102,28 @@
     envelope.gain.exponentialRampToValueAtTime(volume, start + 0.015);
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
     oscillator.connect(envelope);
-    envelope.connect(master);
+    envelope.connect(out);
     oscillator.start(start);
     oscillator.stop(start + duration + 0.02);
+  }
+
+  function playNoise(start, duration, volume, filterType, frequency, q = 1) {
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const envelope = context.createGain();
+    source.buffer = noiseBuffer;
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(frequency, start);
+    filter.Q.value = q;
+    envelope.gain.setValueAtTime(0.0001, start);
+    envelope.gain.exponentialRampToValueAtTime(volume, start + 0.005);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(sfxBus);
+    source.start(start, Math.random() * 1.5);
+    source.stop(start + duration + 0.02);
+    return filter;
   }
 
   function selectScene(nextScene, challengeId) {
@@ -92,6 +146,7 @@
       nextNoteTime = context.currentTime + 0.05;
       if (enabled) scheduleNotes();
     }
+    updateAmbient();
   }
 
   function scheduleNotes() {
@@ -106,11 +161,11 @@
 
       const note = track.melody[step];
       const duration = track.tempo;
-      playNote(440 * 2 ** ((note - 69) / 12), nextNoteTime, duration * 0.82, 'square', 0.11);
+      playNote(midi(note), nextNoteTime, duration * 0.82, 'square', 0.11);
 
       if (step % 4 === 0) {
         const bassNote = track.bass[Math.floor(step / 4) % track.bass.length];
-        playNote(440 * 2 ** ((bassNote - 69) / 12), nextNoteTime, duration * 3.2, 'triangle', 0.16);
+        playNote(midi(bassNote), nextNoteTime, duration * 3.2, 'triangle', 0.16);
       }
 
       nextNoteTime += duration;
@@ -120,25 +175,24 @@
 
   async function start() {
     const audio = getContext();
-    await audio.resume();
+    await unlock();
     if (enabled) return;
 
     enabled = true;
     nextNoteTime = audio.currentTime + 0.05;
-    master.gain.cancelScheduledValues(audio.currentTime);
-    master.gain.setTargetAtTime(0.65, audio.currentTime, 0.04);
+    musicFade.gain.cancelScheduledValues(audio.currentTime);
+    musicFade.gain.setTargetAtTime(1, audio.currentTime, 0.04);
     scheduleNotes();
     timer = window.setInterval(scheduleNotes, 25);
   }
 
+  // Apagar la música no silencia los pasos, la captura ni el ambiente.
   async function stop() {
     if (!context || !enabled) return;
     enabled = false;
     window.clearInterval(timer);
-    master.gain.cancelScheduledValues(context.currentTime);
-    master.gain.setTargetAtTime(0, context.currentTime, 0.03);
-    await new Promise((resolve) => window.setTimeout(resolve, 120));
-    if (!enabled) await context.suspend();
+    musicFade.gain.cancelScheduledValues(context.currentTime);
+    musicFade.gain.setTargetAtTime(0, context.currentTime, 0.03);
   }
 
   async function toggle() {
@@ -150,11 +204,153 @@
     return enabled;
   }
 
+  // ---- Ambiente: viento suave y pájaros mientras se explora el mapa ----
+  function chirp() {
+    if (!ready() || !ambient) return;
+    const t = context.currentTime;
+    const base = 2200 + Math.random() * 1400;
+    const notes = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < notes; i++) {
+      const s = t + i * 0.11;
+      const osc = context.createOscillator();
+      const env = context.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(base, s);
+      osc.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * 0.3), s + 0.07);
+      env.gain.setValueAtTime(0.0001, s);
+      env.gain.exponentialRampToValueAtTime(0.035, s + 0.01);
+      env.gain.exponentialRampToValueAtTime(0.0001, s + 0.08);
+      osc.connect(env);
+      env.connect(sfxBus);
+      osc.start(s);
+      osc.stop(s + 0.1);
+    }
+  }
+
+  function scheduleBird() {
+    window.clearTimeout(birdTimer);
+    birdTimer = window.setTimeout(() => { chirp(); if (ambient) scheduleBird(); }, 3000 + Math.random() * 6000);
+  }
+
+  function updateAmbient() {
+    if (!ready()) return;
+    const want = scene === 'world';
+    if (want && !ambient) {
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      source.buffer = noiseBuffer;
+      source.loop = true;
+      filter.type = 'lowpass';
+      filter.frequency.value = 420;
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.05, context.currentTime + 1.5);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(sfxBus);
+      source.start();
+      // El viento sube y baja lentamente.
+      const lfo = context.createOscillator();
+      const lfoGain = context.createGain();
+      lfo.frequency.value = 0.07;
+      lfoGain.gain.value = 180;
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start();
+      ambient = { source, gain, lfo };
+      scheduleBird();
+    } else if (!want && ambient) {
+      const { source, gain, lfo } = ambient;
+      ambient = null;
+      window.clearTimeout(birdTimer);
+      gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.3);
+      source.stop(context.currentTime + 1.5);
+      lfo.stop(context.currentTime + 1.5);
+    }
+  }
+
+  // ---- Efectos ----
+  let stepAlt = false;
+  const sfx = {
+    step(surface = 'grass') {
+      if (!ready()) return;
+      const t = context.currentTime;
+      stepAlt = !stepAlt;
+      const shift = stepAlt ? 1 : 0.85;
+      if (surface === 'wood') {
+        playNoise(t, 0.07, 0.35, 'bandpass', 900 * shift, 4);
+        playNote(180 * shift, t, 0.06, 'triangle', 0.12, sfxBus);
+      } else if (surface === 'stone') {
+        playNoise(t, 0.05, 0.3, 'bandpass', 2600 * shift, 2.5);
+      } else if (surface === 'dirt') {
+        playNoise(t, 0.08, 0.28, 'lowpass', 1100 * shift);
+      } else {
+        playNoise(t, 0.09, 0.22, 'highpass', 2400 * shift);
+      }
+    },
+    throw() {
+      if (!ready()) return;
+      const t = context.currentTime;
+      const f = playNoise(t, 0.45, 0.18, 'bandpass', 600, 3);
+      f.frequency.exponentialRampToValueAtTime(3200, t + 0.4);
+    },
+    absorb() {
+      if (!ready()) return;
+      const t = context.currentTime;
+      const osc = context.createOscillator();
+      const env = context.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1400, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.4);
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      osc.connect(env);
+      env.connect(sfxBus);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    },
+    bounce() {
+      if (!ready()) return;
+      playNote(320, context.currentTime, 0.08, 'triangle', 0.18, sfxBus);
+    },
+    wobble() {
+      if (!ready()) return;
+      const t = context.currentTime;
+      playNoise(t, 0.05, 0.3, 'bandpass', 1800, 6);
+      playNote(520, t, 0.05, 'square', 0.05, sfxBus);
+    },
+    caught() {
+      if (!ready()) return;
+      const t = context.currentTime;
+      playNoise(t, 0.04, 0.5, 'bandpass', 3000, 8);
+      playNote(1200, t, 0.05, 'square', 0.08, sfxBus);
+      [72, 76, 79, 84, 79, 84].forEach((n, i) => {
+        const s = t + 0.25 + i * 0.12 + (i >= 4 ? 0.06 : 0);
+        playNote(midi(n), s, i === 5 ? 0.6 : 0.11, 'square', 0.1, sfxBus);
+        playNote(midi(n - 12), s, i === 5 ? 0.6 : 0.11, 'triangle', 0.12, sfxBus);
+      });
+    }
+  };
+
+  function setVolume(kind, value) {
+    volumes[kind] = Math.max(0, Math.min(1, Number(value)));
+    try { localStorage.setItem(VOL_KEY, JSON.stringify(volumes)); } catch (e) {}
+    if (!context) return;
+    const bus = kind === 'music' ? musicBus : sfxBus;
+    const max = kind === 'music' ? MUSIC_MAX : SFX_MAX;
+    bus.gain.setTargetAtTime(volumes[kind] * max, context.currentTime, 0.05);
+  }
+
   window.HackemonMusic = {
     start,
     stop,
     toggle,
+    unlock,
     setScene: selectScene,
-    isPlaying: () => enabled
+    isPlaying: () => enabled,
+    setVolume,
+    getVolumes: () => ({ ...volumes }),
+    sfx
   };
 })();
