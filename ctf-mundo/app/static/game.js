@@ -606,7 +606,7 @@ function openChallenge(challenge) {
     <div id="ph"></div>
     <button id="bh">Pedir pista (0/${challenge.pistas.length})</button>
     <p>
-      <input id="fl" placeholder="HACKEMON{...}" autocomplete="off">
+      <input id="fl" placeholder="Escribe la bandera" autocomplete="off">
       <button id="bv">Validar bandera</button>
     </p>
     <p id="rs"></p>
@@ -638,6 +638,17 @@ async function validateFlag(challenge) {
       body: JSON.stringify({ id: challenge.id, flag })
     });
     const data = await response.json();
+
+    if (data.ok && challenge.id === 2) {
+      saveData.cap[challenge.id] = Date.now();
+      persistProgress();
+      $('#panel').innerHTML = `
+        <h2>Reto completado</h2>
+        <p>¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.</p>
+        <button id="continue">Continuar</button>`;
+      $('#continue').onclick = closePanels;
+      return;
+    }
 
     if (data.ok) {
       closePanels();

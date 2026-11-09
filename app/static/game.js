@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Ruta Césped','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
-let R=[],T=[],S={cap:{}},mode='load',A=null,tm=0,keys={},tmr;
+let R=[],T=[],S={cap:{}},mode='load',A=null,captureResult=null,tm=0,keys={},tmr,modeBeforeMenu='map';
 try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
 const persist=()=>{try{localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -61,7 +61,7 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
  const z=P.x<240?1:P.x<496?2:3;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,0,240,12);g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText(`${ZN[z]} · ${total()}/12 · [I] inventario`,4,9)}
 function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
- toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
+ $('#menu-toggle').style.display='none';toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
 function enc(){const{r,kind}=A,k=++A.k,cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.zona];
  g.fillStyle='#bfe3ff';g.fillRect(0,0,240,160);g.fillStyle='#d8f0ff';g.fillRect(0,40,240,20);g.fillStyle='#78c850';g.fillRect(0,92,240,68);g.fillStyle='#68b840';g.fillRect(0,92,240,3);
  g.fillStyle='#5aa83a';[[170,102,52,9],[52,150,56,8]].forEach(([x,y,a,b])=>{g.beginPath();g.ellipse(x,y,a,b,0,0,7);g.fill()});
@@ -75,25 +75,38 @@ function enc(){const{r,kind}=A,k=++A.k,cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.
   else if(k<195){const ph=(k-105)%30;ball(cx,gy,6,ph<20?Math.sin(ph/20*Math.PI*2)*.5:0,zc)}
   else if(k<235){ball(cx,gy,6,0,zc);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
-function closeAll(){$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map'}
+function closeAll(){$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
+function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true')}
+function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false')}
+function restartChallenges(){if(!window.confirm('¿Reiniciar los retos? Se borrarán todas las criaturas capturadas.'))return;S={cap:{}};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();mode='map';$('#panel').style.display=$('#inv').style.display='none';toast('Progreso reiniciado. ¡Vuelve a resolver los retos!')}
+function exitToStart(){if(!window.confirm('¿Salir al inicio? Tu progreso quedará guardado.'))return;closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#menu-toggle').style.display='none';$('#start').style.display='grid';mode='start'}
+function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null}
 function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
  return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
-function openPanel(r){mode='panel';let h=0;const p=$('#panel');
- p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p><p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="CORPX{...}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
+function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel');
+ p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p><p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="Escribe la bandera" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
  p.style.display='block';$('#fl').focus();
  $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h++])}</p>`;$('#bh').textContent=`Pedir pista (${h}/${r.pistas.length})`}};
  $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
   try{const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:v})}),d=await res.json();
-   if(d.ok){closeAll();toast(`¡Bandera correcta! Lanzando cápsula de captura…`);mode='enc';A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();persist();mode='map';toast(`¡Capturaste a ${r.criatura}! (${total()}/12) · [I] inventario`,4000)}}}
+   if(d.ok){closeAll();toast('¡Bandera correcta! Lanzando cápsula de captura…');mode='enc';$('#menu-toggle').style.display='none';A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();persist();captureResult=r;mode='capture-result';$('#capture-title').textContent=r.id===2?'Reto completado':'¡Vaya, vaya!';$('#capture-text').textContent=r.id===2?'¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.':'Parece que encontraste algo. No te emociones, todavía falta mucho para cantar victoria.';$('#capture-message').style.display='grid'}}}
    else{o.className='bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
   catch(e){o.className='bad';o.textContent='No se pudo contactar al servidor.'}}}
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='Escape'){if(mode==='panel'||mode==='inv')closeAll();return}
- if(e.target.tagName==='INPUT'){if(k==='enter')$('#bv').click();return}keys[k]=1;
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
+ if(e.target.tagName==='INPUT'){if(k==='enter')$('#bv').click();return}
+ if(k==='m'){if(mode==='menu')closeMenu();else openMenu();return}keys[k]=1;
  if(mode==='map'){if([' ','enter','e'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k.startsWith('arrow'))e.preventDefault()}
  else if(mode==='inv'&&k==='i')closeAll()});
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 function loop(){tm++;if(mode==='map'||mode==='start'){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
-function updateMusicButton(enabled){const b=$('#music-toggle');b.textContent=enabled?'♫ Música: encendida':'♫ Activar música';b.setAttribute('aria-pressed',String(enabled))}
-$('#begin').onclick=()=>{if(mode!=='start'||!R.length)return;mode='map';$('#start').style.display='none';window.HackemonMusic.start().then(()=>updateMusicButton(true)).catch(e=>{console.error('No se pudo iniciar la música.',e);toast('No se pudo iniciar la música en este navegador.',4000)});toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000)}
+function updateMusicButton(enabled){const b=$('#music-toggle');b.textContent=enabled?'♫ Música: encendida':'♫ Activar música';b.setAttribute('aria-pressed',String(enabled));$('#menu-music').textContent=enabled?'Pausar música':'Reanudar música'}
+$('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
+$('#menu-close').onclick=closeMenu;
+$('#capture-continue').onclick=continueAfterCapture;
+$('#menu-music').onclick=async()=>{try{updateMusicButton(await window.HackemonMusic.toggle())}catch(e){console.error('No se pudo cambiar la música.',e);toast('No se pudo cambiar la música en este navegador.',4000)}};
+$('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
+$('#menu-restart').onclick=restartChallenges;
+$('#menu-exit').onclick=exitToStart;
+$('#begin').onclick=()=>{if(mode!=='start'||!R.length)return;mode='map';$('#start').style.display='none';$('#menu-toggle').style.display='block';window.HackemonMusic.start().then(()=>updateMusicButton(true)).catch(e=>{console.error('No se pudo iniciar la música.',e);toast('No se pudo iniciar la música en este navegador.',4000)});toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000)}
 $('#music-toggle').onclick=async()=>{try{updateMusicButton(await window.HackemonMusic.toggle())}catch(e){console.error('No se pudo cambiar la música.',e);toast('No se pudo reproducir música en este navegador.',4000)}}
 fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;build();mode='start';$('#begin').disabled=false;$('#begin').textContent='Entrar al mundo';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#begin').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});

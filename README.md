@@ -49,7 +49,7 @@ ctf-mundo/
   Dockerfile
   app/
     main.py              # servidor del juego (8080) + sitio objetivo (8081) + servicios TCP
-    retos.py             # definición de los 12 retos y sus banderas CORPX{...}
+    retos.py             # definición de los 12 retos y sus banderas
     artefactos.py        # genera los archivos descargables (pcaps, hash, imagen)
     static/
       index.html         # estructura y menú de inicio
