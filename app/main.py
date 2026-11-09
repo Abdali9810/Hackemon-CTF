@@ -11,6 +11,9 @@ game = Flask(__name__, static_folder=os.path.join(B, "static"), static_url_path=
 def idx(): return game.send_static_file("index.html")
 @game.get("/api/retos")
 def retos(): return jsonify(PUB)
+@game.get("/descargas/foca")
+def descargar_foca():
+    return send_from_directory("/downloads", "FOCA-v3.4.7.1.zip", as_attachment=True)
 tries = defaultdict(deque)
 @game.post("/api/validar")
 def validar():
@@ -61,8 +64,6 @@ def tcp(port, fn):
             try: fn(s.request, s.client_address[0], s.client_address[2])
             except Exception: pass
     threading.Thread(target=Q(("0.0.0.0", port), H).serve_forever, daemon=True).start()
-tcp(9003, lambda s, ip, ts: s.sendall(b"220 CorpX-FTP listo\r\n"))
-tcp(9007, lambda s, ip, ts: s.sendall(f"CORPX-BEACON/1.0 {F[1]}\r\n".encode()))
 SEQ, ev = [7003, 7001, 7002], defaultdict(list)
 for p in SEQ: tcp(p, lambda s, ip, ts, p=p: ev[ip].append((p, ts)))
 def door(s, ip, ts):
