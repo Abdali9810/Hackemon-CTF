@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      - ADMIN_TR_PASS=${ADMIN_TR_PASS:-}   # contraseña del usuario Admin-TR (vacía = ContraseñaTR)
     volumes:
       - ./app/static:/app/static        # edita el juego (index.html) y solo refresca el navegador
     ports:
