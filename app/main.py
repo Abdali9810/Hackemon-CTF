@@ -22,6 +22,19 @@ def validar():
     if len(q) >= 8: return jsonify(ok=False, error="limite"), 429
     q.append(now); d = request.get_json(silent=True) or {}; f = F.get(d.get("id"))
     return jsonify(ok=bool(f) and hmac.compare_digest(str(d.get("flag", "")).strip().encode(), f.encode()))
+ADMIN_TR_USER = "Admin-TR"
+ADMIN_TR_PASS = os.environ.get("ADMIN_TR_PASS") or "ContraseñaTR"
+admin_tries = defaultdict(deque)
+@game.post("/api/admin/login")
+def admin_login():
+    q = admin_tries[request.remote_addr]; now = time.time()
+    while q and now - q[0] > 60: q.popleft()
+    if len(q) >= 5: return jsonify(ok=False, error="limite"), 429
+    q.append(now); d = request.get_json(silent=True) or {}
+    ok = (str(d.get("usuario", "")) == ADMIN_TR_USER
+          and hmac.compare_digest(str(d.get("clave", "")).encode(), ADMIN_TR_PASS.encode()))
+    if not ok: return jsonify(ok=False), 401
+    return jsonify(ok=True, respuestas=F)
 @game.get("/descargas/<path:n>")
 def desc(n): return send_from_directory(os.path.join(B, "artefactos"), n, as_attachment=True)
 
