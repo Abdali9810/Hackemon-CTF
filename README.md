@@ -15,6 +15,10 @@ docker compose up --build -d
 - Juego: http://localhost:8080
 - Sitio objetivo de los retos web: http://localhost:8081
 
+En el reto 1 puedes descargar la imagen de análisis y el instalador de FOCA
+incluido en `FOCA-v3.4.7.1.zip`. En Windows, descomprime el ZIP y ejecuta
+`FOCA.exe` para inspeccionar los metadatos de la imagen.
+
 Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
 **I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
 criaturas de la zona anterior (un guardia bloquea el puente).
@@ -25,7 +29,8 @@ criaturas de la zona anterior (un guardia bloquea el puente).
   - `index.html`: estructura de la página y menú de inicio.
   - `game.css`: estilos y diseño visual.
   - `game.js`: mapa, movimiento, retos e inventario.
-  - `game-audio.js`: melodía original de 8 bits y controles de música.
+  - `game-audio.js`: música de bienvenida que cambia, melodía de exploración
+    y temas pausados exclusivos para los retos.
   Gracias al volumen del `docker-compose.yml`, edita los archivos, guarda y
   **refresca el navegador** (`Ctrl+F5`). No hace falta reconstruir.
 - **El backend en Python** (`app/main.py`, `app/retos.py`, `app/artefactos.py`)
