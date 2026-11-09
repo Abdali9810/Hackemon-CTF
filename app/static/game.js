@@ -1,10 +1,19 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Ruta Césped','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
-let R=[],T=[],S={cap:{}},mode='load',A=null,captureResult=null,tm=0,keys={},tmr,modeBeforeMenu='map',PLAYER='',ADMIN=null,DLG=null;
+let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,tm=0,keys={},tmr,modeBeforeMenu='map',PLAYER='',ADMIN=null,DLG=null;
+let playerSkinColor='#2fa84f';
 try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
-const persist=()=>{try{localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
+if(!S||typeof S!=='object')S={cap:{},hints:{}};
+if(!S.cap||typeof S.cap!=='object')S.cap={};
+if(!S.hints||typeof S.hints!=='object')S.hints={};
+if(S.skin)playerSkinColor=S.skin;
+const persist=()=>{try{S.skin=playerSkinColor;localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const nz=z=>R.filter(r=>r.zona===z&&S.cap[r.id]).length,total=()=>R.filter(r=>S.cap[r.id]).length,unl=z=>z===1||!!ADMIN||nz(z-1)>=4;
+const basePts=r=>r.zona===1?100:r.zona===2?150:200;
+const revHints=r=>typeof S.hints[r.id]==='number'?Math.min(S.hints[r.id],(r.pistas||[]).length):0;
+const earned=r=>Math.max(0,basePts(r)-revHints(r)*15);
+const score=()=>R.reduce((s,r)=>s+(S.cap[r.id]?earned(r):0),0);
 const hs=(x,y)=>((Math.imul(x,73856093)^Math.imul(y,19349663))>>>0)%100;
 function toast(s,ms=2800){const m=$('#msg');m.textContent=s;m.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>m.style.display='none',ms)}
 function updateMusicButton(enabled){const label=enabled?'Desactivar música':'Activar música';
@@ -19,7 +28,7 @@ function initVolumes(){const v=window.HackemonMusic.getVolumes();
   if(k==='sfx')el.onchange=()=>window.HackemonMusic.sfx.step('grass')}}
 function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true')}
 function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false')}
-function restartChallenges(){if(!window.confirm('¿Empezar una nueva partida? Se borrarán todas las criaturas capturadas.'))return;S={cap:{}};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
+function restartChallenges(){if(!window.confirm('¿Empezar una nueva partida? Se borrarán todas las criaturas capturadas.'))return;S={cap:{},hints:{},skin:playerSkinColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
 function exitToStart(){if(!window.confirm('¿Salir al inicio? Tu progreso quedará guardado.'))return;closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#menu-toggle').style.display='none';$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
 const QUIPS=[
  r=>['¡Vaya, vaya!',`Capturaste a ${r.criatura}, ${PLAYER}. No te pongas la capucha de hacker todavía: hasta un reloj roto acierta dos veces al día.`],
@@ -77,7 +86,7 @@ function ball(x,y,r,rot,col){g.save();g.translate(x,y);g.rotate(rot);g.fillStyle
  g.fillStyle='#f8f8f8';g.beginPath();g.arc(0,0,r,0,Math.PI);g.fill();g.fillStyle='#222';g.fillRect(-r,-1,2*r,2);
  g.fillStyle='#f8d030';g.beginPath();g.arc(0,0,r*.35,0,7);g.fill();g.strokeStyle='#222';g.lineWidth=1;g.stroke();g.restore()}
 function spr(x,y,d,fr){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
- f('rgba(0,0,0,.25)',3,13,10,3);f('#2b4a9a',4,10,3,5-(fr===1?1:0));f('#2b4a9a',9,10,3,5-(fr===2?1:0));f('#2fa84f',3,6,10,5);f('#f0c8a0',2,7,1,3);f('#f0c8a0',13,7,1,3);
+ f('rgba(0,0,0,.25)',3,13,10,3);f('#2b4a9a',4,10,3,5-(fr===1?1:0));f('#2b4a9a',9,10,3,5-(fr===2?1:0));f(playerSkinColor,3,6,10,5);f('#f0c8a0',2,7,1,3);f('#f0c8a0',13,7,1,3);
  f('#f0c8a0',4,1,8,6);if(d===1)f('#7a4a22',4,1,8,5);f('#f8f8f8',3,0,10,3);f('#e03030',3,3,10,1);
  if(d===0){f('#222',6,4,1,1);f('#222',9,4,1,1)}if(d===2)f('#222',5,4,1,1);if(d===3)f('#222',10,4,1,1)}
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -126,7 +135,7 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
   if(r===nr&&!done){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',x+6,y-4+Math.sin(tm/6)*1.5)}});
  GD.forEach(d=>{const q=gpos(d);guard(q.x*16-cx,q.y*16-cy-4,unl(d.z))});
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
- const z=P.x<240?1:P.x<496?2:3;const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12`;if(h.textContent!==txt)h.textContent=txt}
+ const z=P.x<240?1:P.x<496?2:3;const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt}
 function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
  $('#menu-toggle').style.display='none';
  window.HackemonMusic.setScene('encounter',r.id);
@@ -147,13 +156,13 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<235){ball(cx,gy,6,0,zc);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
 function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
-function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
- return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
+function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><p><b>Puntuación: ${score()} pts</b></p><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
+ return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revHints(r)?' (-'+revHints(r)*15+' pistas)':''}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
 function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel');
- p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div>${ADMIN?`<div class=admin-box><b>Admin · Respuesta:</b> <code>${esc(ADMIN[r.id]||'')}</code>${r.id===1?' <small>(en el campo escribe solo lo de dentro de las llaves)</small>':''}<br><button id=admin-skip>Saltar reto</button></div>`:''}<div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="${r.id===1?'Escribe la bandera':r.id===2?'Escribe la bandera':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
+ p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div>${ADMIN?`<div class=admin-box><b>Admin · Respuesta:</b> <code>${esc(ADMIN[r.id]||'')}</code>${r.id===1?' <small>(en el campo escribe solo lo de dentro de las llaves)</small>':''}<br><button id=admin-skip>Saltar reto</button></div>`:''}<div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})${revHints(r)?' -'+revHints(r)*15+' pts ya reveladas':''}</button><p><input id=fl placeholder="${r.id===1?'Escribe la bandera':r.id===2?'Escribe la bandera':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
  p.style.display='block';$('#fl').focus();
  if(ADMIN)$('#admin-skip').onclick=()=>captureSuccess(r,'Modo admin: reto saltado. Lanzando cápsula…');
- $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h++])}</p>`;$('#bh').textContent=`Pedir pista (${h}/${r.pistas.length})`}};
+ $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h])}</p>`;h++;if(typeof S.hints[r.id]!=='number'||h>S.hints[r.id])S.hints[r.id]=h;persist();const pen=revHints(r)*15;$('#bh').textContent='Pedir pista ('+h+'/'+r.pistas.length+')'+(pen?' -'+pen+' pts':'');}};
  $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
   try{const submittedFlag=r.id===1?`CORPX{${v}}`:v;const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:submittedFlag})}),d=await res.json();
    if(d.ok)captureSuccess(r,'¡Bandera correcta! Lanzando cápsula de captura…');
@@ -186,4 +195,8 @@ $('#sound-music').onclick=toggleMusic;
 $('#sound-panel').onclick=e=>e.stopPropagation();
 document.addEventListener('click',()=>{if(!$('#sound-panel').hidden)setSoundPanel(false)});
 initVolumes();
+document.querySelectorAll('.swatch').forEach(btn=>{
+ if(btn.dataset.skin===playerSkinColor)btn.classList.add('active');
+ btn.addEventListener('click',()=>{playerSkinColor=btn.dataset.skin;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b===btn));persist()});
+});
 fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;build();mode='start';window.HackemonMusic.setScene('menu');$('#begin').disabled=false;$('#begin').textContent='Entrar al mundo';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#begin').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});
