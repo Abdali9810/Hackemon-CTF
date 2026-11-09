@@ -20,8 +20,10 @@ incluido en `FOCA-v3.4.7.1.zip`. En Windows, descomprime el ZIP y ejecuta
 `FOCA.exe` para inspeccionar los metadatos de la imagen.
 
 Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
-**I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
-criaturas de la zona anterior (un guardia bloquea el puente).
+**I** inventario · **M** abrir el menú · **Esc** volver/cerrar. Desde el menú
+puedes pausar la música, abrir el inventario, reiniciar los retos o volver al
+inicio. Para pasar de zona hay que capturar 3 criaturas de la zona anterior
+(un guardia bloquea el puente).
 
 ## Editar y ver los cambios
 
