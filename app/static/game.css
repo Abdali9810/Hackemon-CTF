@@ -1,8 +1,11 @@
 body{margin:0;background:#0f1a14;color:#e8f0e0;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;align-items:center}
 #w{position:relative;width:min(96vw,960px,calc((100vh - 60px)*1.5));aspect-ratio:3/2;margin-top:10px;border:4px solid #3b5b3b;border-radius:8px;overflow:hidden;background:#000}
 canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
-#music-toggle{position:absolute;z-index:3;top:8px;right:8px;background:#16241ce8;border:1px solid #47745b}
-#menu-toggle{display:none;position:absolute;z-index:3;top:8px;left:8px;background:#16241ce8;border:1px solid #47745b}
+#music-toggle{position:absolute;z-index:3;top:8px;right:8px;background:#16241ce8;border:1px solid #47745b;width:40px;height:40px;padding:0;font-size:22px;line-height:1;display:grid;place-items:center}
+#menu-music{font-size:22px;line-height:1}
+#music-toggle.off,#menu-music.off{opacity:.55;text-decoration:line-through}
+#menu-toggle{display:none;position:absolute;z-index:3;top:8px;left:8px;height:40px;padding:0 12px;background:#16241ce8;border:1px solid #47745b}
+#hud{position:absolute;z-index:2;top:0;left:0;right:0;height:56px;padding:0 120px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#fff;font-weight:bold;font-size:clamp(12px,2vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #start{position:absolute;inset:0;display:grid;place-items:center;overflow:auto;padding:clamp(10px,3vw,28px);box-sizing:border-box;background:linear-gradient(145deg,rgba(8,24,24,.94),rgba(12,25,17,.94)),radial-gradient(ellipse at 70% 15%,#23634c,transparent 58%);text-align:center}
 .intro{width:min(100%,620px);padding:clamp(14px,3.5vw,28px);box-sizing:border-box;border:1px solid #47745b;border-radius:18px;background:rgba(12,26,20,.9);box-shadow:0 12px 50px #0009}
 .eyebrow{margin:0;color:#8ce5b5;letter-spacing:.18em;text-transform:uppercase;font-size:11px}
@@ -38,3 +41,34 @@ input{background:#101c19;color:#e8f0e0;border:1px solid #3b5b3b;border-radius:6p
 p.k{color:#9db3ab;font-size:12px;margin:8px}
 @media(max-height:600px){.intro{padding:10px}.intro h1{margin:4px 0;font-size:23px}.intro>p{margin:6px auto;line-height:1.3}.chapters{margin:8px 0}.chapter{padding:5px 3px}.menu-actions button{padding:7px 14px}}
 @media(max-width:520px){.chapters{grid-template-columns:1fr}.chapter{padding:6px}.intro{border-radius:12px}.intro>p{font-size:12px}}
+/* Tipografía retro */
+body{font:19px/1.35 'VT323',ui-monospace,Menlo,Consolas,monospace}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+h1,h2,.eyebrow,.chapter b,button,.download,#hud,#msg{font-family:'Press Start 2P','VT323',ui-monospace,monospace;letter-spacing:0}
+.intro h1{font-size:clamp(15px,3.4vw,26px);line-height:1.4}
+h2{font-size:13px;line-height:1.5}
+.eyebrow{font-size:9px}
+.chapter b{font-size:9px;line-height:1.5}
+button,.download{font-size:10px;line-height:1.5}
+#menu-toggle{font-size:10px}
+#music-toggle,#menu-music{font-size:22px}
+#hud{font-size:clamp(9px,1.5vw,13px);font-weight:normal}
+#msg{font-size:clamp(8px,1.3vw,11px);line-height:1.8;font-weight:normal}
+/* Registro de entrenador y diálogo */
+#login{position:absolute;z-index:5;inset:0;display:none;place-items:center;overflow:auto;padding:16px;box-sizing:border-box;background:rgba(10,20,12,.94)}
+#login label{display:block;text-align:left;margin:10px 0 4px;color:#9be8c8}
+#login input{width:100%;box-sizing:border-box}
+#login-error{min-height:1.2em;margin:8px 0 0}
+#dialog{position:absolute;z-index:4;left:2%;right:2%;bottom:3%;background:#f8f8f0;color:#202020;border:4px double #384050;border-radius:6px;padding:10px 14px;cursor:pointer}
+#dialog b{display:block;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.3vw,11px);color:#2c4a8a;margin-bottom:6px}
+#dialog p{margin:0 0 4px;font-size:clamp(17px,2.4vw,22px)}
+#dialog small{display:block;text-align:right;color:#666}
+.admin-box{background:#2a1626;border:1px solid #a04a8a;border-radius:8px;padding:8px 12px;margin:8px 0;color:#f2c8e8}
+.admin-box code{user-select:all}
+#admin-skip{background:#8a3a7a}#admin-skip:hover{background:#a04a8a}
+/* Panel desplegable de sonido */
+#sound-panel{position:absolute;z-index:4;top:54px;right:8px;width:min(230px,calc(100% - 16px));box-sizing:border-box;padding:10px 12px;background:#0f1a14f2;border:1px solid #47745b;border-radius:8px;box-shadow:0 8px 30px #0009}
+#sound-panel label{display:flex;justify-content:space-between;margin:8px 0 2px;font-size:17px;color:#9be8c8}
+#sound-panel input[type=range]{width:100%;accent-color:#2f8f5b;padding:0;border:0;background:none}
+#sound-music{width:100%;margin:0}
+#sound-music.off{background:#3a4a42}
