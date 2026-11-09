@@ -601,12 +601,14 @@ function openChallenge(challenge) {
     </div>
     <p>${escapeHtml(challenge.brief)}</p>
     <p><b>Objetivo:</b> <code>${escapeHtml(challenge.objetivo)}</code></p>
+    ${challenge.descarga ? `<p><a class="download" href="${escapeHtml(challenge.descarga)}" download>Descargar archivo del reto</a></p>` : ''}
+    ${challenge.herramienta_descarga ? `<p><a class="download" href="${escapeHtml(challenge.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>` : ''}
     <p>${challenge.tools.map((tool) => `<span class="chip">${escapeHtml(tool)}</span>`).join('')}</p>
     <div class="eth"><b>Ética:</b> ${escapeHtml(challenge.etica)}</div>
     <div id="ph"></div>
     <button id="bh">Pedir pista (0/${challenge.pistas.length})</button>
     <p>
-      <input id="fl" placeholder="HACKEMON{...}" autocomplete="off">
+      <input id="fl" placeholder="${challenge.id === 1 ? 'Escribe el valor del campo Comment' : 'Escribe la bandera'}" autocomplete="off">
       <button id="bv">Validar bandera</button>
     </p>
     <p id="rs"></p>
@@ -632,12 +634,24 @@ async function validateFlag(challenge) {
   }
 
   try {
+    const submittedFlag = challenge.id === 1 ? `HACKEMON{${flag}}` : flag;
     const response = await fetch('/api/validar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: challenge.id, flag })
+      body: JSON.stringify({ id: challenge.id, flag: submittedFlag })
     });
     const data = await response.json();
+
+    if (data.ok && challenge.id === 2) {
+      saveData.cap[challenge.id] = Date.now();
+      persistProgress();
+      $('#panel').innerHTML = `
+        <h2>Reto completado</h2>
+        <p>¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.</p>
+        <button id="continue">Continuar</button>`;
+      $('#continue').onclick = closePanels;
+      return;
+    }
 
     if (data.ok) {
       closePanels();
