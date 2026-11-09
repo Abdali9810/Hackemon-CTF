@@ -16,7 +16,7 @@ E_PCAP = "Una captura de red contiene datos privados: analízala solo con autori
 RETOS = [
  r(1,1,5,8,"Metadatos ocultos","Foca","Forense","Una imagen de CorpX guarda una bandera en sus metadatos. Descárgala y examínala con FOCA.","Revisa los metadatos de la imagen descargada.",["FOCA","exiftool"],
    "Los metadatos pueden revelar información privada. Analiza solo archivos del laboratorio y elimínalos antes de compartir imágenes.",
-   ["Descarga reto01_foca.png con el botón de abajo.","Abre la imagen en FOCA y consulta sus metadatos.","Busca el campo Comment (Comentario); contiene la bandera."],
+   ["Descarga reto01_foca.png con el botón de abajo.","Abre la imagen en FOCA y consulta sus metadatos.","Busca el campo Comment"],
    "/descargas/reto01_foca.png", "/descargas/foca"),
  r(2,1,11,6,"Lo que robots no quiere","Robotín","Web","La intranet web esconde una ruta que no quiere que los buscadores indexen.",W,["curl","navegador"],E_WEB,
    ["curl "+W+"/robots.txt","Disallow no protege nada: la ruta sigue siendo pública.","Visita la ruta que aparece prohibida."]),
