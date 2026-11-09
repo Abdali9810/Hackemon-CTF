@@ -9,6 +9,11 @@
 <body>
   <div id="w">
     <canvas id="c" width="480" height="320"></canvas>
+    <div id="top-bar">
+      <span id="hud-zone">Hackémon</span>
+      <span id="hud-score">0 pts</span>
+      <button id="inv-btn" type="button">Inventario [I]</button>
+    </div>
     <div id="start">
       <div class="intro">
         <div class="eyebrow">Hackémon · Mundo CTF</div>
@@ -20,6 +25,16 @@
           <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
         </div>
         <p class="controls">Laboratorio educativo local · Flechas / WASD para moverte · Espacio para interactuar · I para inventario</p>
+        <div class="char-select">
+          <p class="char-label">Elige el color de tu personaje:</p>
+          <div class="swatches">
+            <button class="swatch active" data-skin="#2fa84f" title="Verde" aria-label="Verde" style="--c:#2fa84f"></button>
+            <button class="swatch" data-skin="#2070e8" title="Azul" aria-label="Azul" style="--c:#2070e8"></button>
+            <button class="swatch" data-skin="#d03030" title="Rojo" aria-label="Rojo" style="--c:#d03030"></button>
+            <button class="swatch" data-skin="#c88010" title="Dorado" aria-label="Dorado" style="--c:#c88010"></button>
+            <button class="swatch" data-skin="#9b30c0" title="Morado" aria-label="Morado" style="--c:#9b30c0"></button>
+          </div>
+        </div>
         <button id="begin" disabled>Preparando laboratorio…</button>
       </div>
     </div>

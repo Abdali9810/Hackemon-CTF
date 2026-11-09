@@ -14,13 +14,14 @@ const DIRECTIONS = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 
 let challenges = [];
 let tiles = [];
-let saveData = { cap: {} };
+let saveData = { cap: {}, hints: {} };
 let mode = 'load';
 let animation = null;
 let frame = 0;
 let keys = {};
 let toastTimer;
 let lastGuardMessage = 0;
+let playerSkinColor = '#2fa84f';
 
 const player = { x: 48, y: 256, dir: 0, moving: 0 };
 const creatureSprites = {};
@@ -31,13 +32,20 @@ try {
 } catch (error) {
   console.warn('No se pudo leer el progreso guardado.', error);
 }
+if (!saveData || typeof saveData !== 'object') saveData = { cap: {}, hints: {} };
+if (!saveData.cap || typeof saveData.cap !== 'object') saveData.cap = {};
+if (!saveData.hints || typeof saveData.hints !== 'object') saveData.hints = {};
+if (saveData.skin) playerSkinColor = saveData.skin;
 
 // Persistencia, formato y progreso
 function persistProgress() {
   try {
+    saveData.skin = playerSkinColor;
     localStorage.setItem('ctfm1', JSON.stringify(saveData));
+    return true;
   } catch (error) {
     console.warn('No se pudo guardar el progreso.', error);
+    return false;
   }
 }
 
@@ -64,6 +72,23 @@ function isZoneUnlocked(zone) {
   return zone === 1 || countCapturedInZone(zone - 1) >= 3;
 }
 
+function getBasePts(challenge) {
+  return challenge.zona === 1 ? 100 : challenge.zona === 2 ? 150 : 200;
+}
+
+function getRevealedHints(challenge) {
+  const n = saveData.hints[challenge.id];
+  return typeof n === 'number' ? Math.min(n, (challenge.pistas || []).length) : 0;
+}
+
+function getEarned(challenge) {
+  return Math.max(0, getBasePts(challenge) - getRevealedHints(challenge) * 15);
+}
+
+function calculateScore() {
+  return challenges.reduce((sum, c) => sum + (saveData.cap[c.id] ? getEarned(c) : 0), 0);
+}
+
 function hashTile(x, y) {
   return ((Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0) % 100;
 }
@@ -76,6 +101,14 @@ function showToast(message, duration = 2800) {
   toastTimer = setTimeout(() => {
     element.style.display = 'none';
   }, duration);
+}
+
+function updateHud() {
+  const zone = player.x < 240 ? 1 : player.x < 496 ? 2 : 3;
+  const elZone = $('#hud-zone');
+  const elScore = $('#hud-score');
+  if (elZone) elZone.textContent = `${ZONE_NAMES[zone]} · ${countCaptured()}/12`;
+  if (elScore) elScore.textContent = `${calculateScore()} pts`;
 }
 
 // Construcción y dibujo del mapa
@@ -235,6 +268,26 @@ function drawMap() {
     }
   });
 
+  // NPC guards at zone bridges
+  const guard1X = 15 * 16 - cameraX;
+  const guard1Y = 16 * 16 - cameraY;
+  if (guard1X > -20 && guard1X < 260) {
+    drawNpc(
+      isZoneUnlocked(2) ? guard1X - 16 : guard1X,
+      isZoneUnlocked(2) ? guard1Y - 20 : guard1Y - 4,
+      !isZoneUnlocked(2)
+    );
+  }
+  const guard2X = 31 * 16 - cameraX;
+  const guard2Y = 16 * 16 - cameraY;
+  if (guard2X > -20 && guard2X < 260) {
+    drawNpc(
+      isZoneUnlocked(3) ? guard2X - 16 : guard2X,
+      isZoneUnlocked(3) ? guard2Y - 20 : guard2Y - 4,
+      !isZoneUnlocked(3)
+    );
+  }
+
   drawPlayer(
     player.x - cameraX,
     player.y - cameraY - 4,
@@ -242,12 +295,7 @@ function drawMap() {
     player.moving > 0 ? (Math.floor(player.moving / 4) % 2 ? 1 : 2) : 0
   );
 
-  const zone = player.x < 240 ? 1 : player.x < 496 ? 2 : 3;
-  g.fillStyle = 'rgba(0,0,0,.6)';
-  g.fillRect(0, 0, 240, 12);
-  g.fillStyle = '#fff';
-  g.font = 'bold 8px monospace';
-  g.fillText(`${ZONE_NAMES[zone]} · ${countCaptured()}/12 · [I] inventario`, 4, 9);
+  updateHud();
 }
 
 // Sprites y animaciones de criaturas
@@ -284,7 +332,7 @@ function drawPlayer(x, y, direction, frameOffset) {
   fill('rgba(0,0,0,.25)', 3, 13, 10, 3);
   fill('#2b4a9a', 4, 10, 3, 5 - (frameOffset === 1 ? 1 : 0));
   fill('#2b4a9a', 9, 10, 3, 5 - (frameOffset === 2 ? 1 : 0));
-  fill('#2fa84f', 3, 6, 10, 5);
+  fill(playerSkinColor, 3, 6, 10, 5);
   fill('#f0c8a0', 2, 7, 1, 3);
   fill('#f0c8a0', 13, 7, 1, 3);
   fill('#f0c8a0', 4, 1, 8, 6);
@@ -384,6 +432,38 @@ function tintCreature(challenge, color) {
   context.fillStyle = color;
   context.fillRect(0, 0, 10, 10);
   return tinted;
+}
+
+function drawNpc(x, y, locked) {
+  const fill = (color, offsetX, offsetY, width, height) => {
+    g.fillStyle = color;
+    g.fillRect(x + offsetX, y + offsetY, width, height);
+  };
+  fill('rgba(0,0,0,.25)', 3, 13, 10, 3);
+  fill('#1c2a4a', 4, 10, 3, 5);
+  fill('#1c2a4a', 9, 10, 3, 5);
+  fill('#2c4a8a', 3, 6, 10, 5);
+  fill('#f8d030', 7, 7, 2, 2);
+  fill('#1c2a4a', 3, 9, 10, 1);
+  fill('#f0c8a0', 2, 7, 1, 3);
+  fill('#f0c8a0', 13, 7, 1, 3);
+  fill('#f0c8a0', 4, 1, 8, 6);
+  fill('#1c2a4a', 3, 0, 10, 3);
+  fill('#2c4a8a', 3, 3, 10, 1);
+  fill('#f8d030', 7, 1, 2, 1);
+  fill('#222', 6, 4, 1, 1);
+  fill('#222', 9, 4, 1, 1);
+  fill('#8a5a2a', 6, 6, 4, 1);
+  if (locked) {
+    fill('#8a6a3a', 14, -4, 1, 18);
+    fill('#c8c8d0', 13, -6, 3, 3);
+    g.fillStyle = '#fff';
+    g.font = 'bold 9px monospace';
+    g.fillText('!', x + 6, y - 7 + Math.sin(frame / 8) * 1.5);
+  } else {
+    fill('#8a6a3a', 0, -2, 1, 16);
+    fill('#c8c8d0', -1, -4, 3, 3);
+  }
 }
 
 // Movimiento, colisiones y retos cercanos
@@ -565,8 +645,8 @@ function openInventory() {
   mode = 'inv';
   const inventory = $('#inv');
   inventory.innerHTML = `
-    <h2>Inventario · ${countCaptured()}/12</h2>
-    <small>Cada criatura es un reto resuelto.</small>
+    <h2>Inventario · ${countCaptured()}/12 · ${calculateScore()} puntos</h2>
+    <small>Cada criatura es un reto resuelto; las pistas reducen los puntos obtenidos.</small>
     <div class="grid">${challenges.map((challenge) => {
       const captured = saveData.cap[challenge.id];
       const image = captured ? getCreatureSprite(challenge) : getSilhouette(challenge);
@@ -574,7 +654,9 @@ function openInventory() {
       const detail = captured
         ? `${escapeHtml(challenge.tipo)} · Zona ${challenge.zona}`
         : `Reto ${challenge.id} · Zona ${challenge.zona}`;
-      const title = captured ? `<small>${escapeHtml(challenge.titulo)}</small>` : '';
+      const title = captured
+        ? `<small>${escapeHtml(challenge.titulo)} · ${getEarned(challenge)} pts</small>`
+        : '';
       return `
         <div class="card ${captured ? '' : 'off'}">
           <img src="${image.toDataURL()}">
@@ -589,7 +671,7 @@ function openInventory() {
 
 function openChallenge(challenge) {
   mode = 'panel';
-  let hintCount = 0;
+  const pistas = challenge.pistas || [];
   const panel = $('#panel');
   panel.innerHTML = `
     <div class="row">
@@ -605,8 +687,9 @@ function openChallenge(challenge) {
     ${challenge.herramienta_descarga ? `<p><a class="download" href="${escapeHtml(challenge.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>` : ''}
     <p>${challenge.tools.map((tool) => `<span class="chip">${escapeHtml(tool)}</span>`).join('')}</p>
     <div class="eth"><b>Ética:</b> ${escapeHtml(challenge.etica)}</div>
+    <p><b>Valor:</b> ${getBasePts(challenge)} pts · <span id="rp">Si lo resuelves ahora: ${getEarned(challenge)} pts</span></p>
     <div id="ph"></div>
-    <button id="bh">Pedir pista (0/${challenge.pistas.length})</button>
+    <button id="bh"></button>
     <p>
       <input id="fl" placeholder="${challenge.id === 1 ? 'Escribe el valor del campo Comment' : 'Escribe la bandera'}" autocomplete="off">
       <button id="bv">Validar bandera</button>
@@ -616,10 +699,35 @@ function openChallenge(challenge) {
   panel.style.display = 'block';
   $('#fl').focus();
 
-  $('#bh').onclick = () => {
-    if (hintCount >= challenge.pistas.length) return;
-    $('#ph').innerHTML += `<p>${escapeHtml(challenge.pistas[hintCount++])}</p>`;
-    $('#bh').textContent = `Pedir pista (${hintCount}/${challenge.pistas.length})`;
+  const ph = panel.querySelector('#ph');
+  const bh = panel.querySelector('#bh');
+  const rp = panel.querySelector('#rp');
+
+  const updateHintBtn = () => {
+    const h = getRevealedHints(challenge);
+    if (h < pistas.length) {
+      bh.textContent = `Mostrar pista (${h}/${pistas.length}) · −15 pts`;
+      bh.disabled = false;
+    } else {
+      bh.textContent = `Pistas agotadas (${h}/${pistas.length})`;
+      bh.disabled = true;
+    }
+    rp.textContent = `Si lo resuelves ahora: ${getEarned(challenge)} pts`;
+  };
+
+  const h0 = getRevealedHints(challenge);
+  for (let i = 0; i < h0; i++) {
+    ph.insertAdjacentHTML('beforeend', `<p><b>Pista ${i + 1}:</b> ${escapeHtml(pistas[i])}</p>`);
+  }
+  updateHintBtn();
+
+  bh.onclick = () => {
+    const h = getRevealedHints(challenge);
+    if (h >= pistas.length) return;
+    ph.insertAdjacentHTML('beforeend', `<p><b>Pista ${h + 1}:</b> ${escapeHtml(pistas[h])}</p>`);
+    saveData.hints[challenge.id] = h + 1;
+    persistProgress();
+    updateHintBtn();
   };
   $('#bv').onclick = () => validateFlag(challenge);
 }
@@ -654,6 +762,7 @@ async function validateFlag(challenge) {
     }
 
     if (data.ok) {
+      const earned = getEarned(challenge);
       closePanels();
       showToast('¡Bandera correcta! Lanzando cápsula de captura…');
       mode = 'enc';
@@ -662,10 +771,10 @@ async function validateFlag(challenge) {
         challenge,
         frame: 0,
         done: () => {
-          saveData.cap[challenge.id] = Date.now();
+          if (!saveData.cap[challenge.id]) saveData.cap[challenge.id] = Date.now();
           persistProgress();
           mode = 'map';
-          showToast(`¡Capturaste a ${challenge.criatura}! (${countCaptured()}/12) · [I] inventario`, 4000);
+          showToast(`¡Capturaste a ${challenge.criatura}! +${earned} pts (${calculateScore()} total) · ${countCaptured()}/12 · [I] inventario`, 5000);
         }
       };
       return;
@@ -733,6 +842,27 @@ $('#begin').onclick = () => {
   $('#start').style.display = 'none';
   showToast('Camina hasta una cápsula brillante y pulsa Espacio.', 4000);
 };
+
+$('#inv-btn')?.addEventListener('click', () => {
+  if (mode === 'map' || mode === 'start') openInventory();
+  else if (mode === 'inv') closePanels();
+});
+
+document.querySelectorAll('.swatch').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    playerSkinColor = btn.dataset.skin;
+    document.querySelectorAll('.swatch').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    persistProgress();
+  });
+});
+
+const savedSkin = saveData.skin;
+if (savedSkin) {
+  document.querySelectorAll('.swatch').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.skin === savedSkin);
+  });
+}
 
 fetch('/api/retos')
   .then((response) => response.json())
