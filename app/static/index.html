@@ -5,13 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f1a14">
   <title>Hackémon · Mundo CTF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
   <link rel="stylesheet" href="game.css">
 </head>
 <body>
   <main id="w">
     <canvas id="c" width="240" height="160" aria-label="Mapa del mundo Hackémon"></canvas>
+    <div id="hud" hidden aria-live="polite"></div>
     <button id="menu-toggle" type="button" aria-expanded="false">☰ Menú</button>
-    <button id="music-toggle" type="button" aria-pressed="false">♫ Activar música</button>
+    <button id="music-toggle" class="off" type="button" aria-pressed="false" aria-expanded="false" aria-controls="sound-panel" aria-label="Sonido" title="Sonido">♫</button>
+    <div id="sound-panel" hidden>
+      <button id="sound-music" type="button" aria-pressed="false">Música: apagada</button>
+      <label for="vol-music">Música <span id="vol-music-val"></span></label>
+      <input id="vol-music" type="range" min="0" max="100" step="5">
+      <label for="vol-sfx">Ambiente y efectos <span id="vol-sfx-val"></span></label>
+      <input id="vol-sfx" type="range" min="0" max="100" step="5">
+    </div>
 
     <section id="start" aria-labelledby="intro-title">
       <div class="intro">
@@ -43,9 +54,9 @@
       <div class="menu-card">
         <p class="eyebrow">Hackémon</p>
         <h2 id="menu-title">Menú del juego</h2>
-        <button id="menu-music" type="button">Pausar música</button>
+        <button id="menu-music" class="off" type="button" aria-pressed="false" aria-label="Activar música" title="Activar música">♫</button>
         <button id="menu-inventory" type="button">Ver inventario</button>
-        <button id="menu-restart" type="button">Reiniciar retos</button>
+        <button id="menu-restart" type="button">Nueva partida</button>
         <button id="menu-exit" type="button">Salir al inicio</button>
         <button id="menu-close" type="button">Volver al juego</button>
       </div>
@@ -59,6 +70,28 @@
         <button id="capture-continue" type="button">Continuar</button>
       </div>
     </section>
+
+    <section id="login" aria-labelledby="login-title">
+      <form id="login-form" class="menu-card" autocomplete="off">
+        <p class="eyebrow">Registro de entrenador</p>
+        <h2 id="login-title">¿Cómo te llamas?</h2>
+        <label for="login-name">Nombre de usuario</label>
+        <input id="login-name" maxlength="20" required placeholder="Tu nombre">
+        <div id="login-pass-row" hidden>
+          <label for="login-pass">Contraseña de administrador</label>
+          <input id="login-pass" type="password" placeholder="Contraseña">
+        </div>
+        <p id="login-error" class="bad" role="alert"></p>
+        <button id="login-go" type="submit">Comenzar</button>
+        <button id="login-back" type="button">Volver</button>
+      </form>
+    </section>
+
+    <div id="dialog" role="dialog" aria-live="polite" hidden>
+      <b id="dialog-who"></b>
+      <p id="dialog-text"></p>
+      <small>Espacio / clic para continuar ▼</small>
+    </div>
 
     <div id="msg" role="status" aria-live="polite"></div>
     <div id="panel"></div>
