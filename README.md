@@ -22,8 +22,19 @@ incluido en `FOCA-v3.4.7.1.zip`. En Windows, descomprime el ZIP y ejecuta
 Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
 **I** inventario · **M** abrir el menú · **Esc** volver/cerrar. Desde el menú
 puedes pausar la música, abrir el inventario, reiniciar los retos o volver al
-inicio. Para pasar de zona hay que capturar 3 criaturas de la zona anterior
+inicio. Para pasar de zona hay que capturar las 4 criaturas de la zona anterior
 (un guardia bloquea el puente).
+
+### Usuario administrador (pruebas)
+
+Al entrar al mundo el juego pide un nombre de usuario. Con cualquier nombre se
+juega normal. El usuario **`Admin-TR`** pide además una contraseña, que se
+valida en el servidor; con ella se ven las respuestas de cada reto, aparece un
+botón **Saltar reto** y los guardias dejan pasar por todo el mapa.
+
+La contraseña por defecto es `ContraseñaTR`. Se puede cambiar con la variable
+de entorno `ADMIN_TR_PASS` (`ADMIN_TR_PASS=otra-clave docker compose up -d`).
+No la compartas con los participantes.
 
 ## Editar y ver los cambios
 
