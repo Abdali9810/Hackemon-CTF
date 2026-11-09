@@ -1,19 +1,23 @@
 F = {i: f for i, f in enumerate([
- "CORPX{nmap_ve_puertos_abiertos}", "CORPX{robots_no_es_seguridad}", "CORPX{las_cabeceras_hablan}",
+ "CORPX{foca_en_los_metadatos}", "CORPX{robots_no_es_seguridad}", "CORPX{las_cabeceras_hablan}",
  "CORPX{sunshine}", "CORPX{http_sin_cifrar_se_ve_todo}", "CORPX{ftp_en_texto_plano}",
  "CORPX{dns_tambien_filtra_datos}", "CORPX{metadatos_que_delatan}", "CORPX{icmp_oculta_mensajes}",
  "CORPX{inyeccion_sql_clasica}", "CORPX{enumerar_antes_de_atacar}", "CORPX{golpea_las_puertas_en_orden}"], 1)}
 D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
-def r(i, z, x, y, titulo, cri, tipo, brief, objetivo, tools, etica, pistas):
+def r(i, z, x, y, titulo, cri, tipo, brief, objetivo, tools, etica, pistas, descarga=None,
+      herramienta_descarga=None):
     return dict(id=i, zona=z, x=x, y=y, titulo=titulo, criatura=cri, tipo=tipo, brief=brief,
-                objetivo=objetivo, tools=tools, etica=etica, pistas=pistas, flag=F[i])
+                objetivo=objetivo, tools=tools, etica=etica, pistas=pistas, flag=F[i], descarga=descarga,
+                herramienta_descarga=herramienta_descarga)
 E_SCAN = "Escanea solo equipos propios o con autorización escrita. Un escaneo sin permiso puede ser delito."
 E_WEB = "Probar un sitio ajeno sin permiso es ilegal. Aquí el alcance es solo este laboratorio."
 E_PCAP = "Una captura de red contiene datos privados: analízala solo con autorización y no la compartas."
 RETOS = [
- r(1,1,5,8,"Puertos abiertos","Nmapito","Red","Un servicio de CorpX responde en algún puerto entre el 9001 y el 9010. Hay un señuelo.","127.0.0.1 puertos 9001-9010",["nmap","nc"],E_SCAN,
-   ["Escanea el rango: nmap -p 9001-9010 127.0.0.1","Dos puertos están abiertos; uno es un señuelo.","Conéctate a cada uno: nc 127.0.0.1 <puerto>"]),
+ r(1,1,5,8,"Metadatos ocultos","Foca","Forense","Una imagen de CorpX guarda una bandera en sus metadatos. Descárgala y examínala con FOCA.","Revisa los metadatos de la imagen descargada.",["FOCA","exiftool"],
+   "Los metadatos pueden revelar información privada. Analiza solo archivos del laboratorio y elimínalos antes de compartir imágenes.",
+   ["Descarga reto01_foca.png con el botón de abajo.","Abre la imagen en FOCA y consulta sus metadatos.","Busca el campo Comment (Comentario); contiene la bandera."],
+   "/descargas/reto01_foca.png", "/descargas/foca"),
  r(2,1,11,6,"Lo que robots no quiere","Robotín","Web","La intranet web esconde una ruta que no quiere que los buscadores indexen.",W,["curl","navegador"],E_WEB,
    ["curl "+W+"/robots.txt","Disallow no protege nada: la ruta sigue siendo pública.","Visita la ruta que aparece prohibida."]),
  r(3,1,6,24,"Cabeceras que hablan","Cabecín","Web","Los desarrolladores dejaron algo en la respuesta HTTP de la página principal.",W,["curl -I","navegador (F12)"],E_WEB,
