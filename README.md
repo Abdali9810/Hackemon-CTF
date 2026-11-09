@@ -19,6 +19,17 @@ Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
 **I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
 criaturas de la zona anterior (un guardia bloquea el puente).
 
+## Puntuación y pistas
+
+- Los retos 1–4 valen 100 puntos cada uno; los retos 5–8, 200; y los retos
+  9–12, 300. Los puntos se suman al resolver cada reto por primera vez.
+- Las tres pistas de cada reto se revelan en orden. En la fase 1, cada pista
+  resta 10, 15 y 20 puntos; en la fase 2 resta 15, 20 y 25; y en la fase 3
+  resta 20, 25 y 30 puntos, respectivamente. La puntuación nunca se reduce
+  por debajo de cero.
+- El marcador superior y el inventario muestran los puntos acumulados. El
+  progreso, las pistas reveladas y sus descuentos se guardan en este navegador.
+
 ## Editar y ver los cambios
 
 - **El juego** está dividido por responsabilidades en `app/static/`:

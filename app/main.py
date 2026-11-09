@@ -5,12 +5,22 @@ from markupsafe import escape
 from waitress import serve
 from retos import RETOS, F
 B = os.path.dirname(os.path.abspath(__file__))
-PUB = [{k: v for k, v in r.items() if k != "flag"} for r in RETOS]
+PUB = [
+    {k: v for k, v in r.items() if k not in ("flag", "pistas")}
+    | {"cantidad_pistas": len(r["pistas"])}
+    for r in RETOS
+]
 game = Flask(__name__, static_folder=os.path.join(B, "static"), static_url_path="")
 @game.get("/")
 def idx(): return game.send_static_file("index.html")
 @game.get("/api/retos")
 def retos(): return jsonify(PUB)
+@game.get("/api/pistas/<int:reto_id>/<int:numero>")
+def pista(reto_id, numero):
+    reto = next((r for r in RETOS if r["id"] == reto_id), None)
+    if reto is None or numero < 1 or numero > len(reto["pistas"]):
+        return jsonify(error="pista_no_disponible"), 404
+    return jsonify(pista=reto["pistas"][numero - 1])
 tries = defaultdict(deque)
 @game.post("/api/validar")
 def validar():

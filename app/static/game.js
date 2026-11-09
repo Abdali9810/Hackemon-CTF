@@ -1,10 +1,18 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Ruta Césped','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
-let R=[],T=[],S={cap:{}},mode='load',A=null,tm=0,keys={},tmr;
-try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
-const persist=()=>{try{localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
+let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,tm=0,keys={},tmr;
+try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){console.error('No se pudo recuperar el progreso guardado.',e)}
+if(!S||typeof S!=='object')S={cap:{},hints:{}};
+if(!S.cap||typeof S.cap!=='object')S.cap={};
+if(!S.hints||typeof S.hints!=='object')S.hints={};
+const persist=()=>{try{localStorage.setItem('ctfm1',JSON.stringify(S));return true}catch(e){console.error('No se pudo guardar el progreso.',e);return false}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const nz=z=>R.filter(r=>r.zona===z&&S.cap[r.id]).length,total=()=>R.filter(r=>S.cap[r.id]).length,unl=z=>z===1||nz(z-1)>=3;
+const hintCount=r=>Math.min(r.cantidad_pistas,Array.isArray(S.hints[r.id])?S.hints[r.id].length:0);
+const hintPenalty=(r,n)=>10+(r.zona-1)*5+(n-1)*5;
+const hintCost=r=>Array.from({length:hintCount(r)},(_,i)=>hintPenalty(r,i+1)).reduce((a,b)=>a+b,0);
+const earned=r=>Math.max(0,r.puntos-hintCost(r));
+const score=()=>R.reduce((sum,r)=>sum+(S.cap[r.id]?earned(r):0),0);
 const hs=(x,y)=>((Math.imul(x,73856093)^Math.imul(y,19349663))>>>0)%100;
 function toast(s,ms=2800){const m=$('#msg');m.textContent=s;m.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>m.style.display='none',ms)}
 function build(){
@@ -59,7 +67,7 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
   ball(x+8,y+6,5,0,done?'#777':ZC[r.zona]);if(done){g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText('✓',x+5,y+4)}
   if(r===nr&&!done){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',x+6,y-4+Math.sin(tm/6)*1.5)}});
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
- const z=P.x<240?1:P.x<496?2:3;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,0,240,12);g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText(`${ZN[z]} · ${total()}/12 · [I] inventario`,4,9)}
+ const z=P.x<240?1:P.x<496?2:3;g.fillStyle='rgba(0,0,0,.7)';g.fillRect(0,0,240,22);g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText(`${ZN[z]} · ${total()}/12`,4,9);g.fillText(`Puntos: ${score()} · [I] inventario`,4,19)}
 function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
  toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
 function enc(){const{r,kind}=A,k=++A.k,cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.zona];
@@ -76,17 +84,28 @@ function enc(){const{r,kind}=A,k=++A.k,cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.
   else if(k<235){ball(cx,gy,6,0,zc);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
 function closeAll(){$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map'}
-function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
- return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
-function openPanel(r){mode='panel';let h=0;const p=$('#panel');
- p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p><p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="CORPX{...}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
- p.style.display='block';$('#fl').focus();
- $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h++])}</p>`;$('#bh').textContent=`Pedir pista (${h}/${r.pistas.length})`}};
- $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
+function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12 · ${score()} puntos</h2><small>Cada criatura es un reto resuelto; las pistas reducen los puntos obtenidos.</small><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
+ return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)} · ${earned(r)} puntos</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
+function openPanel(r){mode='panel';let h=hintCount(r),pending=false;const p=$('#panel');
+ p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p><p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><p><b>Valor:</b> ${r.puntos} puntos · <span id=rp>Si lo resuelves ahora: ${earned(r)} puntos</span></p><div id=ph aria-live=polite></div><p id=hs role=status></p><button id=bh>Mostrar pista (${h}/${r.cantidad_pistas})${h<r.cantidad_pistas?` · −${hintPenalty(r,h+1)} puntos`:''}</button><p><input id=fl placeholder="CORPX{...}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
+ p.style.display='block';p.querySelector('#fl').focus();
+ const ph=p.querySelector('#ph'),hs=p.querySelector('#hs'),bh=p.querySelector('#bh'),rp=p.querySelector('#rp');
+ const updateHintUI=()=>{h=hintCount(r);bh.textContent=`Mostrar pista (${h}/${r.cantidad_pistas})${h<r.cantidad_pistas?` · −${hintPenalty(r,h+1)} puntos`:''}`;bh.disabled=pending||h>=r.cantidad_pistas;rp.textContent=`Si lo resuelves ahora: ${earned(r)} puntos`};
+ (S.hints[r.id]||[]).slice(0,h).forEach((text,i)=>{ph.insertAdjacentHTML('beforeend',`<p><b>Pista ${i+1}:</b> ${esc(text)}</p>`)});
+ updateHintUI();
+ bh.onclick=async()=>{if(pending||h>=r.cantidad_pistas)return;const index=h;pending=true;updateHintUI();hs.className='';hs.textContent='Cargando pista…';
+  try{const res=await fetch(`/api/pistas/${r.id}/${index+1}`),d=await res.json();if(!res.ok||typeof d.pista!=='string')throw new Error('No se pudo obtener la pista.');
+   const revealed=Array.isArray(S.hints[r.id])?S.hints[r.id]:[];let saved=true;
+   if(revealed.length===index){S.hints[r.id]=[...revealed,d.pista];saved=persist();ph.insertAdjacentHTML('beforeend',`<p><b>Pista ${index+1}:</b> ${esc(d.pista)}</p>`)}
+   updateHintUI();hs.textContent=`Pista revelada. Esta pista resta ${hintPenalty(r,index+1)} puntos al reto.${saved===false?' No se pudo guardar el progreso en este navegador.':''}`}
+  catch(e){hs.className='bad';hs.textContent='No se pudo cargar la pista. Comprueba tu conexión e inténtalo de nuevo.'}
+  finally{pending=false;updateHintUI()}};
+ p.querySelector('#bv').onclick=async()=>{const v=p.querySelector('#fl').value.trim(),o=p.querySelector('#rs'),bv=p.querySelector('#bv');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
+  bv.disabled=true;
   try{const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:v})}),d=await res.json();
-   if(d.ok){closeAll();toast(`¡Bandera correcta! Lanzando cápsula de captura…`);mode='enc';A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();persist();mode='map';toast(`¡Capturaste a ${r.criatura}! (${total()}/12) · [I] inventario`,4000)}}}
-   else{o.className='bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
-  catch(e){o.className='bad';o.textContent='No se pudo contactar al servidor.'}}}
+   if(d.ok){closeAll();toast(`¡Bandera correcta! Lanzando cápsula de captura…`);mode='enc';A={kind:'capture',r,k:0,done:()=>{if(!S.cap[r.id])S.cap[r.id]=Date.now();const saved=persist();mode='map';toast(`¡Capturaste a ${r.criatura}! +${earned(r)} puntos (${score()} total) · ${total()}/12 retos · [I] inventario${saved?'':' · No se pudo guardar el progreso'}`,5000)}}}
+   else{o.className='bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.';bv.disabled=false}}
+  catch(e){o.className='bad';o.textContent='No se pudo contactar al servidor.';bv.disabled=false}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='Escape'){if(mode==='panel'||mode==='inv')closeAll();return}
  if(e.target.tagName==='INPUT'){if(k==='enter')$('#bv').click();return}keys[k]=1;
  if(mode==='map'){if([' ','enter','e'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k.startsWith('arrow'))e.preventDefault()}

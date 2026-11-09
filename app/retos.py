@@ -7,7 +7,8 @@ D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
 def r(i, z, x, y, titulo, cri, tipo, brief, objetivo, tools, etica, pistas):
     return dict(id=i, zona=z, x=x, y=y, titulo=titulo, criatura=cri, tipo=tipo, brief=brief,
-                objetivo=objetivo, tools=tools, etica=etica, pistas=pistas, flag=F[i])
+                objetivo=objetivo, tools=tools, etica=etica, pistas=pistas,
+                puntos=100 * ((i + 3) // 4), flag=F[i])
 E_SCAN = "Escanea solo equipos propios o con autorización escrita. Un escaneo sin permiso puede ser delito."
 E_WEB = "Probar un sitio ajeno sin permiso es ilegal. Aquí el alcance es solo este laboratorio."
 E_PCAP = "Una captura de red contiene datos privados: analízala solo con autorización y no la compartas."
