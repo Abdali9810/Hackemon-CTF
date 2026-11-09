@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Ruta Césped','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
-let R=[],T=[],S={cap:{}},mode='load',A=null,tm=0,keys={},tmr,modeBeforeMenu='map';
+let R=[],T=[],S={cap:{}},mode='load',A=null,captureResult=null,tm=0,keys={},tmr,modeBeforeMenu='map';
 try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
 const persist=()=>{try{localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -12,6 +12,7 @@ function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMe
 function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false')}
 function restartChallenges(){if(!window.confirm('¿Reiniciar los retos? Se borrarán todas las criaturas capturadas.'))return;S={cap:{}};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Progreso reiniciado. ¡Vuelve a resolver los retos!')}
 function exitToStart(){if(!window.confirm('¿Salir al inicio? Tu progreso quedará guardado.'))return;closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#menu-toggle').style.display='none';$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
+function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null}
 function build(){
  for(let y=0;y<H;y++){T[y]=[];for(let x=0;x<W;x++){const n=hs(x,y),z3=x>=33;let v=z3?5:0;
   if(x===0||y===0||x===W-1||y===H-1)v=z3?6:2;else if([15,16,31,32].includes(x))v=3;
@@ -86,12 +87,12 @@ function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.Hackem
 function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
  return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
 function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel');
- p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="CORPX{...}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
+ p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div><div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})</button><p><input id=fl placeholder="${r.id===1?'Escribe la bandera':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
  p.style.display='block';$('#fl').focus();
  $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h++])}</p>`;$('#bh').textContent=`Pedir pista (${h}/${r.pistas.length})`}};
  $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
-  try{const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:v})}),d=await res.json();
-   if(d.ok){closeAll(false);toast(`¡Bandera correcta! Lanzando cápsula de captura…`);mode='enc';$('#menu-toggle').style.display='none';A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();persist();mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');toast(`¡Capturaste a ${r.criatura}! (${total()}/12) · [I] inventario`,4000)}}}
+  try{const submittedFlag=r.id===1?`CORPX{${v}}`:v;const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:submittedFlag})}),d=await res.json();
+   if(d.ok){closeAll(false);toast(`¡Bandera correcta! Lanzando cápsula de captura…`);mode='enc';$('#menu-toggle').style.display='none';A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();persist();captureResult=r;mode='capture-result';$('#capture-text').textContent='¡Vaya, vaya! Parece que encontraste algo. No te emociones, todavía falta mucho para cantar victoria.';$('#capture-message').style.display='grid'}}}
    else{o.className='bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
   catch(e){o.className='bad';o.textContent='No se pudo contactar al servidor.'}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
@@ -106,6 +107,7 @@ function loop(){tm++;if(mode==='map'||mode==='start'){if(mode==='map')update();d
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
+$('#capture-continue').onclick=continueAfterCapture;
 $('#menu-music').onclick=async()=>{try{updateMusicButton(await window.HackemonMusic.toggle())}catch(e){console.error('No se pudo cambiar la música.',e);toast('No se pudo cambiar la música en este navegador.',4000)}};
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
 $('#menu-restart').onclick=restartChallenges;
