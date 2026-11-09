@@ -22,6 +22,12 @@ def sess(c, s, sp, dp, msgs, t):
             add(e(CM, SM, c, s) / TCP(sport=sp, dport=dp, flags="A", seq=cs, ack=ss))
     return pk, t
 def w(n, p): wrpcap(os.path.join(O, n), p)
+# 1 imagen con bandera en metadatos
+im = Image.new("RGB", (192, 192), "#16324f"); d = ImageDraw.Draw(im)
+for i in range(0, 192, 12): d.rectangle([i, 0, i + 6, 191], fill="#1f4f7a")
+d.ellipse([56, 56, 136, 136], fill="#f5a524"); d.text((70, 90), "FOCA", fill="#101c19")
+pi = PngInfo(); pi.add_text("Author", "CorpX"); pi.add_text("Comment", F[1])
+im.save(os.path.join(O, "reto01_foca.png"), pnginfo=pi)
 # 4 hash
 open(os.path.join(O, "reto04_hash.txt"), "w").write(hashlib.md5(b"sunshine").hexdigest() + "\n")
 # 5 http
