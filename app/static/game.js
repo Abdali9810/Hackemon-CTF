@@ -2,12 +2,19 @@ const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Ruta Césped','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
 let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,tm=0,keys={},tmr,modeBeforeMenu='map',PLAYER='',ADMIN=null,DLG=null;
 let playerSkinColor='#2fa84f';
+const characters=[
+ {id:'byte',name:'BYTE',role:'Especialista web',description:'Encuentra detalles y pistas que suelen pasar desapercibidos.',pants:'#2b4a9a',hat:'#f8f8f8',hatBand:'#e03030',hair:'#53331e',accent:'#ffde00',headwear:'cap',skills:['Ojo de codigo · detecta detalles ocultos','Analisis web · experto en aplicaciones']},
+ {id:'cipher',name:'CIPHER',role:'Experto en sistemas',description:'Reconoce patrones y encuentra rutas bloqueadas.',pants:'#26334e',hat:'#252a3b',hatBand:'#f5bc35',hair:'#372b28',accent:'#75d9e8',headwear:'hood',skills:['Lectura de patrones · une pistas','Resolucion metódica de retos']},
+ {id:'pixel',name:'PIXEL',role:'Analista de red',description:'Sigue el recorrido de los datos hasta su origen.',pants:'#553e8f',hat:'#f2f2f2',hatBand:'#4d56cf',hair:'#6a3b25',accent:'#55dfc2',headwear:'headset',skills:['Rastreo de red · sigue el flujo de datos','Criptografia · descifra mensajes']}
+];
+let activeCharacterIndex=0,chosenCharacterId=null;
 try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
 if(!S||typeof S!=='object')S={cap:{},hints:{}};
 if(!S.cap||typeof S.cap!=='object')S.cap={};
 if(!S.hints||typeof S.hints!=='object')S.hints={};
 if(S.skin)playerSkinColor=S.skin;
-const persist=()=>{try{S.skin=playerSkinColor;localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
+if(characters.some(ch=>ch.id===S.character)){chosenCharacterId=S.character;activeCharacterIndex=characters.findIndex(ch=>ch.id===chosenCharacterId)}
+const persist=()=>{try{S.skin=playerSkinColor;if(chosenCharacterId)S.character=chosenCharacterId;localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const nz=z=>R.filter(r=>r.zona===z&&S.cap[r.id]).length,total=()=>R.filter(r=>S.cap[r.id]).length,unl=z=>z===1||!!ADMIN||nz(z-1)>=4;
 const basePts=r=>r.zona===1?100:r.zona===2?150:200;
@@ -16,6 +23,16 @@ const earned=r=>Math.max(0,basePts(r)-revHints(r)*15);
 const score=()=>R.reduce((s,r)=>s+(S.cap[r.id]?earned(r):0),0);
 const hs=(x,y)=>((Math.imul(x,73856093)^Math.imul(y,19349663))>>>0)%100;
 function toast(s,ms=2800){const m=$('#msg');m.textContent=s;m.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>m.style.display='none',ms)}
+function drawPreview(id,d,ch){const canvas=$(`#${id}`),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.scale(6,6);drawCharacter(ctx,8,1,d,0,ch);ctx.restore()}
+function renderCharacterSelection(){const ch=characters[activeCharacterIndex];
+ $('#character-count').textContent=`${String(activeCharacterIndex+1).padStart(2,'0')} / ${String(characters.length).padStart(2,'0')}`;
+ $('#character-role').textContent=ch.role;$('#character-name').textContent=ch.name;$('#character-description').textContent=ch.description;
+ $('#character-skills').innerHTML=ch.skills.map(skill=>`<li>${esc(skill)}</li>`).join('');
+ $('#skills-panel').hidden=true;$('#skills-toggle').setAttribute('aria-expanded','false');$('#skills-toggle').textContent='VER HABILIDADES';
+ $('#select-character').textContent=chosenCharacterId===ch.id?'PERSONAJE ELEGIDO':'ELEGIR ESTE PERSONAJE';
+ $('#select-character').disabled=chosenCharacterId===ch.id;$('#begin').disabled=!chosenCharacterId;
+ drawPreview('preview-front',0,ch);drawPreview('preview-back',1,ch)}
+function browseCharacter(step){activeCharacterIndex=(activeCharacterIndex+step+characters.length)%characters.length;chosenCharacterId=null;renderCharacterSelection()}
 function updateMusicButton(enabled){const label=enabled?'Desactivar música':'Activar música';
  const t=$('#music-toggle');t.classList.toggle('off',!enabled);t.setAttribute('aria-pressed',String(enabled));
  const m=$('#menu-music');m.textContent='♫';m.title=label;m.setAttribute('aria-label',label);m.setAttribute('aria-pressed',String(enabled));m.classList.toggle('off',!enabled);
@@ -56,7 +73,7 @@ async function submitLogin(e){e.preventDefault();const name=$('#login-name').val
   catch(x){err.textContent='No se pudo contactar al servidor.';return}}
  PLAYER=name;try{localStorage.setItem('ctfm1-name',name)}catch(x){}
  $('#login').style.display='none';startGame()}
-function startGame(){$('#start').style.display='none';window.HackemonMusic.setScene('world');
+function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='none';window.HackemonMusic.setScene('world');
  window.HackemonMusic.start().then(()=>updateMusicButton(true)).catch(e=>{console.error('No se pudo iniciar la música.',e);toast('No se pudo iniciar la música en este navegador.',4000)});
  const lines=[`¡Hola! Me llamo ${PLAYER}.`,
   'Dicen que este mundo es una aventura llena de retos, criaturas digitales y guardias con muy poca paciencia.',
@@ -85,9 +102,13 @@ function tile(v,x,y,tx,ty){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+
 function ball(x,y,r,rot,col){g.save();g.translate(x,y);g.rotate(rot);g.fillStyle=col||'#2f9fb0';g.beginPath();g.arc(0,0,r,Math.PI,0);g.fill();
  g.fillStyle='#f8f8f8';g.beginPath();g.arc(0,0,r,0,Math.PI);g.fill();g.fillStyle='#222';g.fillRect(-r,-1,2*r,2);
  g.fillStyle='#f8d030';g.beginPath();g.arc(0,0,r*.35,0,7);g.fill();g.strokeStyle='#222';g.lineWidth=1;g.stroke();g.restore()}
-function spr(x,y,d,fr){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
- f('rgba(0,0,0,.25)',3,13,10,3);f('#2b4a9a',4,10,3,5-(fr===1?1:0));f('#2b4a9a',9,10,3,5-(fr===2?1:0));f(playerSkinColor,3,6,10,5);f('#f0c8a0',2,7,1,3);f('#f0c8a0',13,7,1,3);
- f('#f0c8a0',4,1,8,6);if(d===1)f('#7a4a22',4,1,8,5);f('#f8f8f8',3,0,10,3);f('#e03030',3,3,10,1);
+function spr(x,y,d,fr){const ch=characters.find(item=>item.id===P.characterId)||characters[0];drawCharacter(g,x,y,d,fr,ch)}
+function drawCharacter(ctx,x,y,d,fr,ch){const f=(c,a,b,w,h)=>{ctx.fillStyle=c;ctx.fillRect(x+a,y+b,w,h)};
+ f('rgba(0,0,0,.25)',3,13,10,3);f(ch.pants,4,10,3,5-(fr===1?1:0));f(ch.pants,9,10,3,5-(fr===2?1:0));f(playerSkinColor,3,6,10,5);f('#f0c8a0',2,7,1,3);f('#f0c8a0',13,7,1,3);
+ f(ch.hair,4,1,8,6);if(d!==1)f('#f0c8a0',4,2,8,5);else f(ch.hair,4,1,8,5);
+ if(ch.headwear==='hood'){f(ch.hat,2,0,12,2);f(ch.hat,1,2,2,4);f(ch.hat,13,2,2,4);f(ch.hatBand,2,2,12,1)}
+ else if(ch.headwear==='headset'){f(ch.hat,4,0,8,2);f(ch.accent,1,3,2,4);f(ch.accent,13,3,2,4);f(ch.hatBand,4,0,8,1)}
+ else{f(ch.hat,3,0,10,3);f(ch.hatBand,3,3,10,1);f(ch.accent,7,1,2,1)}
  if(d===0){f('#222',6,4,1,1);f('#222',9,4,1,1)}if(d===2)f('#222',5,4,1,1);if(d===3)f('#222',10,4,1,1)}
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const cc={},cs={};
@@ -117,7 +138,7 @@ function guard(x,y,open){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,
  f('#222',6,4,1,1);f('#222',9,4,1,1);f('#8a5a2a',6,6,4,1);
  if(!open){f('#8a6a3a',14,-4,1,18);f('#c8c8d0',13,-6,3,3)}else{f('#8a6a3a',0,-2,1,16);f('#c8c8d0',-1,-4,3,3)}
  if(!open){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',x+6,y-7+Math.sin(tm/8)*1.5)}}
-const P={x:48,y:256,dir:0,mv:0},DD=[[0,1],[0,-1],[-1,0],[1,0]];let lastT=0;
+const P={x:48,y:256,dir:0,mv:0,characterId:null},DD=[[0,1],[0,-1],[-1,0],[1,0]];let lastT=0;
 function can(tx,ty){if(tx<0||ty<0||tx>=W||ty>=H)return false;
  const gd=guardAt(tx,ty);if(gd){guardTalk(gd);return false}
  return PAS.includes(T[ty][tx])}
@@ -168,11 +189,12 @@ function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h
    if(d.ok)captureSuccess(r,'¡Bandera correcta! Lanzando cápsula de captura…');
    else{o.className='bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
   catch(e){o.className='bad';o.textContent='No se pudo contactar al servidor.'}}}
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter','e'].includes(k)){e.preventDefault();nextDialog()}return}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter'].includes(k)){e.preventDefault();nextDialog()}return}
  if(mode==='login'){if(e.key==='Escape'){$('#login').style.display='none';mode='start'}return}if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
+ if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
  if(k==='m'){if(mode==='menu')closeMenu();else openMenu();return}keys[k]=1;
- if(mode==='map'){if([' ','enter','e'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k.startsWith('arrow'))e.preventDefault()}
+ if(mode==='map'){if([' ','enter'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k.startsWith('arrow'))e.preventDefault()}
  else if(mode==='inv'&&k==='i')closeAll()});
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
@@ -186,7 +208,13 @@ $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
 $('#menu-restart').onclick=restartChallenges;
 $('#menu-exit').onclick=exitToStart;
-$('#begin').onclick=openLogin;
+$('#choose-screen').onclick=()=>{if(mode!=='start'||!R.length)return;$('#start').scrollTop=0;$('#story-screen').hidden=true;$('#character-screen').hidden=false;renderCharacterSelection()};
+$('#back-story').onclick=()=>{$('#start').scrollTop=0;$('#character-screen').hidden=true;$('#story-screen').hidden=false};
+$('#previous-character').onclick=()=>browseCharacter(-1);
+$('#next-character').onclick=()=>browseCharacter(1);
+$('#skills-toggle').onclick=()=>{const p=$('#skills-panel');p.hidden=!p.hidden;$('#skills-toggle').setAttribute('aria-expanded',String(!p.hidden));$('#skills-toggle').textContent=p.hidden?'VER HABILIDADES':'OCULTAR HABILIDADES'};
+$('#select-character').onclick=()=>{chosenCharacterId=characters[activeCharacterIndex].id;persist();renderCharacterSelection()};
+$('#begin').onclick=()=>{if(!chosenCharacterId)return;persist();openLogin()};
 $('#login-form').onsubmit=submitLogin;$('#login-name').oninput=syncLogin;
 $('#login-back').onclick=()=>{$('#login').style.display='none';mode='start'};
 $('#dialog').onclick=nextDialog;
@@ -197,6 +225,6 @@ document.addEventListener('click',()=>{if(!$('#sound-panel').hidden)setSoundPane
 initVolumes();
 document.querySelectorAll('.swatch').forEach(btn=>{
  if(btn.dataset.skin===playerSkinColor)btn.classList.add('active');
- btn.addEventListener('click',()=>{playerSkinColor=btn.dataset.skin;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b===btn));persist()});
+ btn.addEventListener('click',()=>{playerSkinColor=btn.dataset.skin;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b===btn));persist();if(!$('#character-screen').hidden)renderCharacterSelection()});
 });
-fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;build();mode='start';window.HackemonMusic.setScene('menu');$('#begin').disabled=false;$('#begin').textContent='Entrar al mundo';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#begin').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});
+fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;build();mode='start';window.HackemonMusic.setScene('menu');$('#choose-screen').disabled=false;$('#choose-screen').textContent='SELECCIONAR PERSONAJE';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#choose-screen').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});

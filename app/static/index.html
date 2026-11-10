@@ -24,39 +24,75 @@
       <input id="vol-sfx" type="range" min="0" max="100" step="5">
     </div>
 
-    <section id="start" aria-labelledby="intro-title">
-      <div class="intro">
-        <p class="eyebrow">Hackémon · Mundo CTF</p>
-        <h1 id="intro-title">Una aventura entre redes y criaturas</h1>
-        <p>
-          En un mundo donde cada conexión esconde una historia, las criaturas
-          digitales protegen secretos y pistas. Explora sus rutas, resuelve
-          desafíos y aprende a cuidar la tecnología usando tus habilidades de
-          forma responsable. Tu viaje apenas comienza.
-        </p>
-        <div class="chapters" aria-label="Zonas del juego">
-          <div class="chapter"><b>01 · Ruta Césped</b>Observa y explora</div>
-          <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
-          <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
-        </div>
-        <p class="controls">
-          Flechas / WASD para moverte · Espacio para interactuar · I para inventario · M para abrir el menú
-        </p>
-        <p class="flag-format">Cada reto indica el formato de su bandera.</p>
-        <div class="char-select">
-          <p class="char-label">Elige el color de tu personaje:</p>
-          <div class="swatches">
-            <button class="swatch active" data-skin="#2fa84f" title="Verde" aria-label="Verde" style="--c:#2fa84f"></button>
-            <button class="swatch" data-skin="#2070e8" title="Azul" aria-label="Azul" style="--c:#2070e8"></button>
-            <button class="swatch" data-skin="#d03030" title="Rojo" aria-label="Rojo" style="--c:#d03030"></button>
-            <button class="swatch" data-skin="#c88010" title="Dorado" aria-label="Dorado" style="--c:#c88010"></button>
-            <button class="swatch" data-skin="#9b30c0" title="Morado" aria-label="Morado" style="--c:#9b30c0"></button>
+    <section id="start" aria-label="Inicio de Hackémon">
+      <div class="start-content">
+        <header class="game-brand">
+          <p class="eyebrow">Hackémon · Mundo CTF</p>
+          <h1>HACKÉMON</h1>
+        </header>
+
+        <section id="story-screen" class="intro" aria-labelledby="intro-title">
+          <h2 id="intro-title">Una aventura entre redes y criaturas</h2>
+          <p>Las criaturas digitales protegen secretos y pistas en tres zonas. Explora sus rutas, resuelve desafíos y aprende a cuidar la tecnología usando tus habilidades de forma responsable.</p>
+          <div class="chapters" aria-label="Zonas del juego">
+            <div class="chapter"><b>01 · Ruta Césped</b>Observa y explora</div>
+            <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
+            <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
           </div>
-        </div>
-        <div class="menu-actions">
-          <button id="begin" type="button" disabled>Preparando el laboratorio…</button>
-        </div>
-        <p class="music-note">Música original: cambia en el menú, acompaña la exploración y tiene una melodía pausada para cada reto.</p>
+          <p class="controls">Flechas / WASD para moverte · Espacio o Enter para abrir una cápsula cercana · I inventario · M menú</p>
+          <p class="flag-format">Cada reto indica el formato de su bandera.</p>
+          <button id="choose-screen" type="button" disabled>Preparando el laboratorio…</button>
+          <p class="music-note">Música original: cambia en el menú, acompaña la exploración y tiene una melodía para cada reto.</p>
+        </section>
+
+        <section id="character-screen" class="intro character-screen" aria-labelledby="character-title" hidden>
+          <div class="selection-heading">
+            <div>
+              <p class="section-kicker">Elige tu entrenador</p>
+              <h2 id="character-title">Selecciona tu personaje</h2>
+            </div>
+            <span id="character-count" class="character-count" aria-live="polite">01 / 03</span>
+          </div>
+          <div class="character-card">
+            <div class="character-previews" aria-label="Vistas del personaje">
+              <figure>
+                <canvas id="preview-front" width="128" height="112" aria-label="Vista frontal"></canvas>
+                <figcaption>FRENTE</figcaption>
+              </figure>
+              <figure>
+                <canvas id="preview-back" width="128" height="112" aria-label="Vista trasera"></canvas>
+                <figcaption>ESPALDA</figcaption>
+              </figure>
+            </div>
+            <div class="character-details">
+              <p id="character-role" class="character-role"></p>
+              <h3 id="character-name"></h3>
+              <p id="character-description" class="character-description"></p>
+              <button id="skills-toggle" class="secondary-button" type="button" aria-expanded="false" aria-controls="skills-panel">Ver habilidades</button>
+              <div id="skills-panel" class="skills-panel" hidden>
+                <h3>Habilidades</h3>
+                <ul id="character-skills"></ul>
+              </div>
+              <div class="char-select">
+                <p class="char-label">Color del uniforme</p>
+                <div class="swatches" aria-label="Color del uniforme">
+                  <button class="swatch active" data-skin="#2fa84f" title="Verde" aria-label="Verde" style="--c:#2fa84f"></button>
+                  <button class="swatch" data-skin="#2070e8" title="Azul" aria-label="Azul" style="--c:#2070e8"></button>
+                  <button class="swatch" data-skin="#d03030" title="Rojo" aria-label="Rojo" style="--c:#d03030"></button>
+                  <button class="swatch" data-skin="#c88010" title="Dorado" aria-label="Dorado" style="--c:#c88010"></button>
+                  <button class="swatch" data-skin="#9b30c0" title="Morado" aria-label="Morado" style="--c:#9b30c0"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="character-actions">
+            <button id="previous-character" class="secondary-button" type="button" aria-label="Personaje anterior">Anterior</button>
+            <button id="select-character" type="button">Elegir este personaje</button>
+            <button id="next-character" class="secondary-button" type="button" aria-label="Siguiente personaje">Siguiente</button>
+          </div>
+          <button id="begin" class="start-button" type="button" disabled>Continuar al acceso</button>
+          <button id="back-story" class="text-button" type="button">Volver a la historia</button>
+        </section>
       </div>
     </section>
 
@@ -108,7 +144,7 @@
     <div id="inv"></div>
   </main>
 
-  <p class="k">Flechas / WASD: moverte · Espacio: interactuar · I: inventario · M / Esc: menú</p>
+  <p class="k">Flechas / WASD: moverte · Espacio / Enter: abrir cápsula cercana · I: inventario · M / Esc: menú</p>
 
   <script src="game-audio.js" defer></script>
   <script src="game.js" defer></script>
