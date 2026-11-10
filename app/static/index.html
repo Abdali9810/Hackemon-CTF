@@ -3,38 +3,82 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f1a14">
-  <title>Hackémon · Mundo CTF</title>
+  <meta name="theme-color" content="#263a9c">
+  <title>Hackemon · Cyber-Quest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="game.css">
 </head>
 <body>
   <main id="w">
-    <canvas id="c" width="240" height="160" aria-label="Mapa del mundo Hackémon"></canvas>
+    <canvas id="c" width="240" height="160" aria-label="Mapa del mundo Hackemon"></canvas>
     <button id="music-toggle" type="button" aria-pressed="false">♫ Activar música</button>
 
-    <section id="start" aria-labelledby="intro-title">
-      <div class="intro">
-        <p class="eyebrow">Hackémon · Mundo CTF</p>
-        <h1 id="intro-title">Una aventura entre redes y criaturas</h1>
-        <p>
-          En un mundo donde cada conexión esconde una historia, las criaturas
-          digitales protegen secretos y pistas. Explora sus rutas, resuelve
-          desafíos y aprende a cuidar la tecnología usando tus habilidades de
-          forma responsable. Tu viaje apenas comienza.
-        </p>
-        <div class="chapters" aria-label="Zonas del juego">
-          <div class="chapter"><b>01 · Ruta Césped</b>Observa y explora</div>
-          <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
-          <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
-        </div>
-        <p class="controls">
-          Flechas / WASD para moverte · Espacio para interactuar · I para inventario
-        </p>
-        <p class="flag-format">Las banderas del laboratorio usan el formato CORPX{...}.</p>
-        <div class="menu-actions">
-          <button id="begin" type="button" disabled>Preparando el laboratorio…</button>
-        </div>
-        <p class="music-note">Melodía original de 8 bits · Puedes apagarla cuando quieras.</p>
+    <section id="start" aria-label="Inicio de Hackemon">
+      <div class="start-content">
+        <header class="game-brand">
+          <p class="eyebrow"><span aria-hidden="true"></span> Operación Kanto_Secure</p>
+          <h1>HACKEMON</h1>
+          <p class="brand-subtitle">CYBER-QUEST</p>
+        </header>
+
+        <section id="story-screen" class="intro" aria-labelledby="intro-title">
+          <h2 id="intro-title">¡ALERTA ROJA EN EL MUNDO HACKEMON!</h2>
+          <p>El Team Rocket se cansó de perder combates y decidió meterse a ciberdelincuente: acaban de secuestrar las 3 zonas del sistema y dejaron todo bajo candado digital.</p>
+          <p>Necesitamos un entrenador con buen teclado que se infiltre en la red y les baje los humos. Tu misión: recorrer cada rincón del mapa, plantarte frente a las cápsulas y resolver los retos para recuperarlas una por una.</p>
+          <p>Ajusta tu gorra de lado y prepárate para la aventura. ¡Demuéstrales quién manda antes de que se desconecte todo!</p>
+          <div class="chapters" aria-label="Zonas de la aventura">
+            <div class="chapter"><b>01 · Ruta Cesped</b>Zona 1</div>
+            <div class="chapter"><b>02 · Bosque de Redes</b>Zona 2</div>
+            <div class="chapter"><b>03 · Cumbre Root</b>Zona 3</div>
+          </div>
+          <p class="controls">Flechas / WASD para moverte · Espacio para saltar o abrir una capsula cercana · E para interactuar · I para la mochila</p>
+          <p class="flag-format">Las banderas del laboratorio usan el formato CORPX{...}.</p>
+          <button id="choose-screen" type="button" disabled>Preparando laboratorio...</button>
+          <p class="music-note">Melodía original de 8 bits · Puedes apagarla cuando quieras.</p>
+        </section>
+
+        <section id="character-screen" class="intro character-screen" aria-labelledby="character-title" hidden>
+          <div class="selection-heading">
+            <div>
+              <p class="section-kicker">Elige tu entrenador</p>
+              <h2 id="character-title">SELECCIONA TU PERSONAJE</h2>
+            </div>
+            <span id="character-count" class="character-count" aria-live="polite">01 / 03</span>
+          </div>
+
+          <div class="character-card">
+            <div class="character-previews" aria-label="Vistas del personaje">
+              <figure>
+                <canvas id="preview-front" width="128" height="112" aria-label="Vista frontal del personaje"></canvas>
+                <figcaption>FRENTE</figcaption>
+              </figure>
+              <figure>
+                <canvas id="preview-back" width="128" height="112" aria-label="Vista trasera del personaje"></canvas>
+                <figcaption>DETRAS</figcaption>
+              </figure>
+            </div>
+            <div class="character-details">
+              <p id="character-role" class="character-role"></p>
+              <h3 id="character-name"></h3>
+              <p id="character-description" class="character-description"></p>
+              <button id="skills-toggle" class="secondary-button" type="button" aria-expanded="false" aria-controls="skills-panel">VER HABILIDADES</button>
+              <div id="skills-panel" class="skills-panel" hidden>
+                <h3>HABILIDADES</h3>
+                <ul id="character-skills"></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="character-actions">
+            <button id="previous-character" class="secondary-button" type="button" aria-label="Ver personaje anterior">◀ ANTERIOR</button>
+            <button id="select-character" type="button">ELEGIR ESTE PERSONAJE</button>
+            <button id="next-character" class="secondary-button" type="button" aria-label="Ver personaje siguiente">SIGUIENTE ▶</button>
+          </div>
+          <button id="begin" class="start-button" type="button" disabled>INICIAR AVENTURA</button>
+          <button id="back-story" class="text-button" type="button">VOLVER A LA HISTORIA</button>
+        </section>
       </div>
     </section>
 
@@ -43,7 +87,7 @@
     <div id="inv"></div>
   </main>
 
-  <p class="k">Flechas / WASD: moverte · Espacio: interactuar con una cápsula · I: inventario · Esc: cerrar</p>
+  <p class="k">Flechas / WASD: moverte · Espacio: saltar o abrir una capsula cercana · E: interactuar · I: mochila · Esc: cerrar</p>
 
   <script src="game-audio.js" defer></script>
   <script src="game.js" defer></script>

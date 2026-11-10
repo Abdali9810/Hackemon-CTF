@@ -3,31 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Hackémon · Mundo CTF</title>
+  <title>Hackemon · Cyber-Quest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="game.css">
 </head>
 <body>
   <div id="w">
     <canvas id="c" width="480" height="320"></canvas>
     <div id="start">
-      <div class="intro">
-        <div class="eyebrow">Hackémon · Mundo CTF</div>
-        <h1>Una historia de conocimiento</h1>
-        <p>Hackémon es un mundo lleno de secretos en sus redes, sus archivos y sus sistemas. Recorre cada zona, resuelve sus retos y descubre que la curiosidad, la observación y el aprendizaje son las mejores herramientas de un agente.</p>
-        <div class="chapters">
-          <div class="chapter"><b>01 · Ruta Césped</b>Aprende a observar</div>
-          <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
-          <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
-        </div>
-        <p class="controls">Laboratorio educativo local · Flechas / WASD para moverte · Espacio para interactuar · I para inventario</p>
-        <button id="begin" disabled>Preparando laboratorio…</button>
+      <div class="start-content">
+        <header class="game-brand">
+          <div class="eyebrow"><span aria-hidden="true"></span> Operación Kanto_Secure</div>
+          <h1>HACKEMON</h1>
+          <p>CYBER-QUEST</p>
+        </header>
+
+        <section id="story-screen" class="intro" aria-labelledby="story-title">
+          <h2 id="story-title">¡ALERTA ROJA EN EL MUNDO HACKEMON!</h2>
+          <p>El Team Rocket se cansó de perder combates y decidió meterse a ciberdelincuente: acaban de secuestrar las 3 zonas del sistema y dejaron todo bajo candado digital.</p>
+          <p>Necesitamos un entrenador con buen teclado que se infiltre en la red y les baje los humos. Tu misión: recorrer cada rincón del mapa, plantarte frente a las cápsulas y resolver los retos para recuperarlas una por una.</p>
+          <p>Ajusta tu gorra de lado y prepárate para la aventura. ¡Demuéstrales quién manda antes de que se desconecte todo!</p>
+          <div class="chapters" aria-label="Zonas de la aventura">
+            <div class="chapter"><b>01 · Ruta Cesped</b>Zona 1</div>
+            <div class="chapter"><b>02 · Bosque de Redes</b>Zona 2</div>
+            <div class="chapter"><b>03 · Cumbre Root</b>Zona 3</div>
+          </div>
+          <p class="controls">Flechas / WASD para moverte · Espacio para saltar o abrir una capsula cercana · E para interactuar · I para la mochila</p>
+          <button id="choose-screen" disabled>Preparando laboratorio...</button>
+        </section>
+
+        <section id="character-screen" class="intro character-screen" aria-labelledby="character-title" hidden>
+          <div class="selection-heading">
+            <div>
+              <p class="section-kicker">Elige tu entrenador</p>
+              <h2 id="character-title">SELECCIONA TU PERSONAJE</h2>
+            </div>
+            <span id="character-count" class="character-count" aria-live="polite">01 / 03</span>
+          </div>
+
+          <div class="character-card">
+            <div class="character-previews" aria-label="Vistas del personaje">
+              <figure>
+                <canvas id="preview-front" width="128" height="112" aria-label="Vista frontal del personaje"></canvas>
+                <figcaption>FRENTE</figcaption>
+              </figure>
+              <figure>
+                <canvas id="preview-back" width="128" height="112" aria-label="Vista trasera del personaje"></canvas>
+                <figcaption>DETRAS</figcaption>
+              </figure>
+            </div>
+            <div class="character-details">
+              <p id="character-role" class="character-role"></p>
+              <h3 id="character-name"></h3>
+              <p id="character-description" class="character-description"></p>
+              <button id="skills-toggle" class="secondary-button" type="button" aria-expanded="false" aria-controls="skills-panel">VER HABILIDADES</button>
+              <div id="skills-panel" class="skills-panel" hidden>
+                <h4>HABILIDADES</h4>
+                <ul id="character-skills"></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="character-actions">
+            <button id="previous-character" class="secondary-button" type="button" aria-label="Ver personaje anterior">◀ ANTERIOR</button>
+            <button id="select-character" type="button">ELEGIR ESTE PERSONAJE</button>
+            <button id="next-character" class="secondary-button" type="button" aria-label="Ver personaje siguiente">SIGUIENTE ▶</button>
+          </div>
+          <button id="begin" class="start-button" disabled>INICIAR AVENTURA</button>
+          <button id="back-story" class="text-button" type="button">VOLVER A LA HISTORIA</button>
+        </section>
       </div>
     </div>
     <div id="msg"></div>
     <div id="panel"></div>
     <div id="inv"></div>
   </div>
-  <p class="k">Flechas / WASD: moverte · Espacio: interactuar con una cápsula · I: inventario · Esc: cerrar</p>
+  <p class="k">Flechas / WASD: moverte · Espacio: saltar o abrir una capsula cercana · E: interactuar · I: mochila · Esc: cerrar</p>
 
   <script src="game.js" defer></script>
 </body>

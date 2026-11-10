@@ -12,7 +12,7 @@ E_SCAN = "Escanea solo equipos propios o con autorización escrita. Un escaneo s
 E_WEB = "Probar un sitio ajeno sin permiso es ilegal. Aquí el alcance es solo este laboratorio."
 E_PCAP = "Una captura de red contiene datos privados: analízala solo con autorización y no la compartas."
 RETOS = [
- r(1,1,5,8,"Puertos abiertos","Nmapito","Red","Un servicio de Hackémon responde en algún puerto entre el 9001 y el 9010. Hay un señuelo.","127.0.0.1 puertos 9001-9010",["nmap","nc"],E_SCAN,
+ r(1,1,5,8,"Puertos abiertos","Nmapito","Red","Un servicio de Hackemon responde en algún puerto entre el 9001 y el 9010. Hay un señuelo.","127.0.0.1 puertos 9001-9010",["nmap","nc"],E_SCAN,
    ["Escanea el rango: nmap -p 9001-9010 127.0.0.1","Dos puertos están abiertos; uno es un señuelo.","Conéctate a cada uno: nc 127.0.0.1 <puerto>"]),
  r(2,1,11,6,"Lo que robots no quiere","Robotín","Web","La intranet web esconde una ruta que no quiere que los buscadores indexen.",W,["curl","navegador"],E_WEB,
    ["curl "+W+"/robots.txt","Disallow no protege nada: la ruta sigue siendo pública.","Visita la ruta que aparece prohibida."]),

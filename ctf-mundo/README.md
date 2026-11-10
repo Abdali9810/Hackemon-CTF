@@ -1,4 +1,4 @@
-# Hackémon — Mundo CTF estilo Pokémon
+# Hackemon — Mundo CTF retro
 
 Juego dockerizado (mapa, captura de criaturas, inventario) con 12 retos de
 red / forense / web. Laboratorio **aislado**: todo se publica solo en
@@ -15,16 +15,18 @@ docker compose up --build -d
 - Juego: http://localhost:8080
 - Sitio objetivo de los retos web: http://localhost:8081
 
-Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
-**I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
-criaturas de la zona anterior (un guardia bloquea el puente).
+Controles: **flechas / WASD** mover · **Espacio** saltar (o abrir una cápsula
+cercana) · **E / Enter** interactuar con criaturas y objetos · **I** inventario ·
+**Esc** cerrar. Explora el mapa para hablar con las criaturas, leer letreros y
+recoger bayas; algunas flores, rocas y cristales tienen mensajes. Para pasar
+de zona hay que capturar 3 criaturas de la zona anterior (un guardia bloquea el puente).
 
 ## Editar y ver los cambios
 
 - **El juego** está dividido por responsabilidad en `app/static/`:
-  - `index.html`: estructura de la página y menú de inicio.
+  - `index.html`: historia inicial, selección de personaje y estructura de la página.
   - `game.css`: estilos y diseño visual.
-  - `game.js`: mapa, movimiento, animaciones, inventario y retos.
+  - `game.js`: mapa, movimiento, criaturas errantes, sprites de personaje, animaciones, inventario y retos.
   Gracias al volumen del `docker-compose.yml`, edita los archivos, guarda y
   **refresca el navegador** (`Ctrl+F5`). No hace falta reconstruir.
 - **El backend en Python** (`app/main.py`, `app/retos.py`, `app/artefactos.py`)

@@ -1,4 +1,4 @@
-# ctf-mundo — Mundo CTF estilo Pokémon
+# Hackemon — Mundo CTF retro
 
 Juego dockerizado (mapa, captura de criaturas, inventario) con 12 retos de
 red / forense / web. Laboratorio **aislado**: todo se publica solo en
@@ -15,9 +15,11 @@ docker compose up --build -d
 - Juego: http://localhost:8080
 - Sitio objetivo de los retos web: http://localhost:8081
 
-Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
-**I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
-criaturas de la zona anterior (un guardia bloquea el puente).
+Controles: **flechas / WASD** mover · **Espacio** saltar (o abrir una cápsula
+cercana) · **E / Enter** interactuar con criaturas y objetos · **I** inventario ·
+**Esc** cerrar. Explora el mapa para hablar con las criaturas, leer letreros y
+recoger bayas; algunas flores, rocas y cristales tienen mensajes. Para pasar
+de zona hay que capturar 3 criaturas de la zona anterior (un guardia bloquea el puente).
 
 ## Puntuación y pistas
 
@@ -33,9 +35,9 @@ criaturas de la zona anterior (un guardia bloquea el puente).
 ## Editar y ver los cambios
 
 - **El juego** está dividido por responsabilidades en `app/static/`:
-  - `index.html`: estructura de la página y menú de inicio.
+  - `index.html`: historia inicial, selección de personaje y estructura de la página.
   - `game.css`: estilos y diseño visual.
-  - `game.js`: mapa, movimiento, retos e inventario.
+  - `game.js`: mapa, movimiento, criaturas errantes, sprites de personaje, retos e inventario.
   - `game-audio.js`: melodía original de 8 bits y controles de música.
   Gracias al volumen del `docker-compose.yml`, edita los archivos, guarda y
   **refresca el navegador** (`Ctrl+F5`). No hace falta reconstruir.

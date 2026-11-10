@@ -14,7 +14,7 @@ const DIRECTIONS = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 
 let challenges = [];
 let tiles = [];
-let saveData = { cap: {} };
+let saveData = { cap: {}, items: {} };
 let mode = 'load';
 let animation = null;
 let frame = 0;
@@ -22,7 +22,53 @@ let keys = {};
 let toastTimer;
 let lastGuardMessage = 0;
 
-const player = { x: 48, y: 256, dir: 0, moving: 0 };
+const player = { x: 48, y: 256, dir: 0, moving: 0, jump: 0, characterId: null };
+const characters = [
+  {
+    id: 'byte',
+    name: 'BYTE',
+    role: 'Especialista web',
+    description: 'Un estratega curioso que descubre accesos y pistas donde nadie mas mira.',
+    shirt: '#2fa84f',
+    pants: '#2b4a9a',
+    hat: '#f8f8f8',
+    hatBand: '#e03030',
+    hair: '#53331e',
+    accent: '#ffde00',
+    headwear: 'cap',
+    skills: ['Ojo de codigo · detecta detalles ocultos', 'Analisis web · experto en aplicaciones']
+  },
+  {
+    id: 'cipher',
+    name: 'CIPHER',
+    role: 'Experto en sistemas',
+    description: 'Un explorador audaz que encuentra patrones y abre rutas bloqueadas.',
+    shirt: '#d34c37',
+    pants: '#26334e',
+    hat: '#252a3b',
+    hatBand: '#f5bc35',
+    hair: '#372b28',
+    accent: '#75d9e8',
+    headwear: 'hood',
+    skills: ['Lectura de patrones · une pistas', 'Fuerza bruta · prueba soluciones con metodo']
+  },
+  {
+    id: 'pixel',
+    name: 'PIXEL',
+    role: 'Analista de red',
+    description: 'Una mente veloz que sigue cada paquete hasta llegar a la fuente.',
+    shirt: '#3977c6',
+    pants: '#553e8f',
+    hat: '#f2f2f2',
+    hatBand: '#4d56cf',
+    hair: '#6a3b25',
+    accent: '#55dfc2',
+    headwear: 'headset',
+    skills: ['Rastreo de red · sigue el flujo de datos', 'Criptografia · descifra mensajes']
+  }
+];
+let activeCharacterIndex = 0;
+let chosenCharacterId = null;
 const creatureSprites = {};
 const silhouetteSprites = {};
 
@@ -31,6 +77,9 @@ try {
 } catch (error) {
   console.warn('No se pudo leer el progreso guardado.', error);
 }
+if (!saveData || typeof saveData !== 'object') saveData = { cap: {}, items: {} };
+if (!saveData.cap || typeof saveData.cap !== 'object') saveData.cap = {};
+if (!saveData.items || typeof saveData.items !== 'object') saveData.items = {};
 
 // Persistencia, formato y progreso
 function persistProgress() {
@@ -78,6 +127,44 @@ function showToast(message, duration = 2800) {
   }, duration);
 }
 
+function drawCharacterPreview(canvasId, direction, character) {
+  const preview = $(`#${canvasId}`);
+  const context = preview.getContext('2d');
+  context.clearRect(0, 0, preview.width, preview.height);
+  context.save();
+  context.scale(6, 6);
+  drawCharacterSprite(context, 8, 1, direction, 0, character);
+  context.restore();
+}
+
+function renderCharacterSelection() {
+  const character = characters[activeCharacterIndex];
+  $('#character-count').textContent =
+    `${String(activeCharacterIndex + 1).padStart(2, '0')} / ${String(characters.length).padStart(2, '0')}`;
+  $('#character-role').textContent = character.role;
+  $('#character-name').textContent = character.name;
+  $('#character-description').textContent = character.description;
+  $('#character-skills').innerHTML = character.skills
+    .map((skill) => `<li>${escapeHtml(skill)}</li>`)
+    .join('');
+  $('#skills-panel').hidden = true;
+  $('#skills-toggle').setAttribute('aria-expanded', 'false');
+  $('#skills-toggle').textContent = 'VER HABILIDADES';
+  $('#select-character').textContent = chosenCharacterId === character.id
+    ? 'PERSONAJE ELEGIDO'
+    : 'ELEGIR ESTE PERSONAJE';
+  $('#select-character').disabled = chosenCharacterId === character.id;
+  $('#begin').disabled = !chosenCharacterId;
+  drawCharacterPreview('preview-front', 0, character);
+  drawCharacterPreview('preview-back', 1, character);
+}
+
+function browseCharacter(step) {
+  activeCharacterIndex = (activeCharacterIndex + step + characters.length) % characters.length;
+  chosenCharacterId = null;
+  renderCharacterSelection();
+}
+
 // Construcción y dibujo del mapa
 function buildMap() {
   for (let y = 0; y < MAP_HEIGHT; y++) {
@@ -121,6 +208,9 @@ function buildMap() {
         }
       }
     }
+  });
+  worldObjects.forEach(({ x, y }) => {
+    if ([2, 6].includes(tiles[y][x])) tiles[y][x] = x >= 33 ? 5 : 0;
   });
 }
 
@@ -204,6 +294,9 @@ function drawMap() {
     }
   }
 
+  drawWildlife(cameraX, cameraY);
+  drawWorldObjects(cameraX, cameraY);
+
   const nearbyChallenge = findNearbyChallenge();
   challenges.forEach((challenge) => {
     const x = challenge.x * 16 - cameraX;
@@ -235,12 +328,24 @@ function drawMap() {
     }
   });
 
+  const jumpHeight = player.jump > 0
+    ? Math.sin((18 - player.jump) / 18 * Math.PI) * 10
+    : 0;
   drawPlayer(
     player.x - cameraX,
-    player.y - cameraY - 4,
+    player.y - cameraY - 4 - jumpHeight,
     player.dir,
     player.moving > 0 ? (Math.floor(player.moving / 4) % 2 ? 1 : 2) : 0
   );
+
+  const target = nearbyInteraction();
+  if (target && target.type !== 'challenge') {
+    g.fillStyle = '#fff';
+    g.fillRect(target.x - cameraX + 2, target.y - cameraY - 13, 12, 8);
+    g.fillStyle = '#273999';
+    g.font = 'bold 6px monospace';
+    g.fillText('E', target.x - cameraX + 6, target.y - cameraY - 7);
+  }
 
   const zone = player.x < 240 ? 1 : player.x < 496 ? 2 : 3;
   g.fillStyle = 'rgba(0,0,0,.6)';
@@ -276,21 +381,43 @@ function drawBall(x, y, radius, rotation, color) {
 }
 
 function drawPlayer(x, y, direction, frameOffset) {
+  const character = characters.find(({ id }) => id === player.characterId) || characters[0];
+  drawCharacterSprite(g, x, y, direction, frameOffset, character);
+}
+
+function drawCharacterSprite(context, x, y, direction, frameOffset, character) {
   const fill = (color, offsetX, offsetY, width, height) => {
-    g.fillStyle = color;
-    g.fillRect(x + offsetX, y + offsetY, width, height);
+    context.fillStyle = color;
+    context.fillRect(x + offsetX, y + offsetY, width, height);
   };
 
   fill('rgba(0,0,0,.25)', 3, 13, 10, 3);
-  fill('#2b4a9a', 4, 10, 3, 5 - (frameOffset === 1 ? 1 : 0));
-  fill('#2b4a9a', 9, 10, 3, 5 - (frameOffset === 2 ? 1 : 0));
-  fill('#2fa84f', 3, 6, 10, 5);
+  fill(character.pants, 4, 10, 3, 5 - (frameOffset === 1 ? 1 : 0));
+  fill(character.pants, 9, 10, 3, 5 - (frameOffset === 2 ? 1 : 0));
+  fill(character.shirt, 3, 6, 10, 5);
   fill('#f0c8a0', 2, 7, 1, 3);
   fill('#f0c8a0', 13, 7, 1, 3);
-  fill('#f0c8a0', 4, 1, 8, 6);
-  if (direction === 1) fill('#7a4a22', 4, 1, 8, 5);
-  fill('#f8f8f8', 3, 0, 10, 3);
-  fill('#e03030', 3, 3, 10, 1);
+  fill(character.hair, 4, 1, 8, 6);
+  if (direction !== 1) {
+    fill('#f0c8a0', 4, 2, 8, 5);
+  } else {
+    fill(character.hair, 4, 1, 8, 5);
+  }
+  if (character.headwear === 'hood') {
+    fill(character.hat, 2, 0, 12, 2);
+    fill(character.hat, 1, 2, 2, 4);
+    fill(character.hat, 13, 2, 2, 4);
+    fill(character.hatBand, 2, 2, 12, 1);
+  } else if (character.headwear === 'headset') {
+    fill(character.hat, 4, 0, 8, 2);
+    fill(character.accent, 1, 3, 2, 4);
+    fill(character.accent, 13, 3, 2, 4);
+    fill(character.hatBand, 4, 0, 8, 1);
+  } else {
+    fill(character.hat, 3, 0, 10, 3);
+    fill(character.hatBand, 3, 3, 10, 1);
+    fill(character.accent, 7, 1, 2, 1);
+  }
 
   if (direction === 0) {
     fill('#222', 6, 4, 1, 1);
@@ -361,6 +488,180 @@ function getCreatureSprite(challenge) {
   return sprite;
 }
 
+const wildlife = [
+  { x: 7, y: 15, flight: false, phase: 0, name: 'Brotiluz', message: 'Brotiluz saluda y deja unas huellas brillantes en el cesped.' },
+  { x: 12, y: 18, flight: true, phase: 11, name: 'Aleteo', message: 'Aleteo da una vuelta sobre tu cabeza antes de seguir volando.' },
+  { x: 10, y: 11, flight: false, phase: 23, name: 'Musguito', message: 'Musguito se esconde entre la hierba y asoma con curiosidad.' },
+  { x: 21, y: 14, flight: true, phase: 7, name: 'Chisparin', message: 'Chisparin revolotea a tu alrededor. Parece lleno de energia.' },
+  { x: 26, y: 18, flight: false, phase: 17, name: 'Caparock', message: 'Caparock te saluda con un movimiento lento de su caparazon.' },
+  { x: 29, y: 12, flight: true, phase: 29, name: 'Ventisca', message: 'Ventisca agita sus alas y deja una brisa fresca.' },
+  { x: 37, y: 15, flight: false, phase: 5, name: 'Pedrusco', message: 'Pedrusco rueda un poquito y vuelve a quedarse quieto.' },
+  { x: 42, y: 18, flight: true, phase: 19, name: 'Nubelin', message: 'Nubelin flota a tu lado y luego asciende hacia las cumbres.' },
+  { x: 45, y: 12, flight: false, phase: 31, name: 'Llamita', message: 'Llamita da un saltito alegre y te invita a seguir explorando.' }
+].map((creature, index) => ({
+  ...creature,
+  sprite: getCreatureSprite({ id: 100 + index })
+}));
+
+function drawWildlife(cameraX, cameraY) {
+  wildlife.forEach((creature) => {
+    const { x, y, phase } = wildlifePosition(creature, cameraX, cameraY);
+    if (x < -18 || x > 258 || y < -22 || y > 178) return;
+
+    g.fillStyle = 'rgba(20,35,30,.3)';
+    g.beginPath();
+    g.ellipse(x + 5, y + 12, 5, 1.5, 0, 0, Math.PI * 2);
+    g.fill();
+
+    if (creature.flight) {
+      const wingHeight = Math.floor((frame + creature.phase) % 8 / 4);
+      g.globalAlpha = .72;
+      g.fillStyle = '#e7f7ff';
+      g.fillRect(x - 2, y + 3 - wingHeight, 3, 2);
+      g.fillRect(x + 9, y + 3 - wingHeight, 3, 2);
+      g.globalAlpha = 1;
+    }
+
+    g.save();
+    if (Math.cos(phase) < 0) {
+      g.translate(x + 10, y);
+      g.scale(-1, 1);
+      g.drawImage(creature.sprite, 0, 0, 10, 10);
+    } else {
+      g.drawImage(creature.sprite, x, y, 10, 10);
+    }
+    g.restore();
+  });
+}
+
+const worldObjects = [
+  { id: 'flower-1', x: 8, y: 13, type: 'flower', message: 'Unas flores silvestres perfuman la Ruta Cesped.' },
+  { id: 'flower-2', x: 13, y: 21, type: 'flower', message: 'Las flores se mecen con la brisa del camino.' },
+  { id: 'flower-3', x: 9, y: 27, type: 'flower', message: 'Mariposas diminutas visitan este rincon lleno de flores.' },
+  { id: 'berry-1', x: 9, y: 10, type: 'berry', message: 'Has recogido una baya madura. Queda guardada en tu mochila.' },
+  { id: 'sign-1', x: 14, y: 14, type: 'sign', message: 'LETRERO: Ruta Cesped. Explora con calma y ayuda a quien encuentres.' },
+  { id: 'stone-1', x: 18, y: 21, type: 'stone', message: 'Una roca con marcas antiguas. Alguien paso por aqui hace mucho.' },
+  { id: 'flower-4', x: 18, y: 12, type: 'flower', message: 'Unas flores azules crecen al borde del Bosque de Redes.' },
+  { id: 'flower-5', x: 24, y: 18, type: 'flower', message: 'Hay flores violetas junto al sendero.' },
+  { id: 'berry-2', x: 25, y: 12, type: 'berry', message: 'Has recogido una baya silvestre. Queda guardada en tu mochila.' },
+  { id: 'sign-2', x: 30, y: 14, type: 'sign', message: 'LETRERO: Bosque de Redes. Sigue los caminos y observa las senales.' },
+  { id: 'crystal-1', x: 33, y: 14, type: 'crystal', message: 'El cristal vibra suavemente: la red de esta zona esta activa.' },
+  { id: 'flower-6', x: 35, y: 14, type: 'flower', message: 'Pequenas flores crecen entre las piedras de la cumbre.' },
+  { id: 'stone-2', x: 40, y: 11, type: 'stone', message: 'Una piedra pulida refleja la luz de la montana.' },
+  { id: 'berry-3', x: 39, y: 22, type: 'berry', message: 'Has recogido una baya de montana. Queda guardada en tu mochila.' },
+  { id: 'flower-7', x: 41, y: 19, type: 'flower', message: 'Las flores de la cumbre resisten el viento y el frio.' },
+  { id: 'sign-3', x: 34, y: 17, type: 'sign', message: 'LETRERO: Cumbre Root. Ya estas cerca del ultimo sector.' },
+  { id: 'crystal-2', x: 45, y: 26, type: 'crystal', message: 'El cristal guarda un destello de energia de la cumbre.' }
+];
+
+function wildlifePosition(creature, cameraX = 0, cameraY = 0) {
+  const phase = frame / (creature.flight ? 18 : 26) + creature.phase;
+  const drift = Math.sin(phase) * (creature.flight ? 13 : 9);
+  const hop = creature.flight
+    ? Math.sin(phase * 1.7) * 5
+    : Math.max(0, Math.sin(phase * 2)) * 1.5;
+  return {
+    x: creature.x * TILE_SIZE - cameraX + drift,
+    y: creature.y * TILE_SIZE - cameraY - hop,
+    phase
+  };
+}
+
+function drawWorldObjects(cameraX, cameraY) {
+  worldObjects.forEach((item) => {
+    const x = item.x * TILE_SIZE - cameraX + 3;
+    const y = item.y * TILE_SIZE - cameraY + 3;
+    if (x < -18 || x > 258 || y < -18 || y > 178) return;
+
+    if (item.type === 'flower') {
+      const sway = Math.round(Math.sin(frame / 18 + item.x));
+      g.fillStyle = '#267b37';
+      g.fillRect(x + 4, y + 7, 2, 6);
+      g.fillRect(x + 9 + sway, y + 6, 2, 7);
+      g.fillStyle = '#54bf52';
+      g.fillRect(x + 2, y + 9, 3, 2);
+      g.fillRect(x + 10 + sway, y + 10, 3, 2);
+      g.fillStyle = item.x % 2 ? '#ff8fc1' : '#fff0a0';
+      g.fillRect(x + 2, y + 2, 3, 3);
+      g.fillRect(x + 6, y, 3, 3);
+      g.fillRect(x + 10, y + 2, 3, 3);
+      g.fillStyle = '#ffde00';
+      g.fillRect(x + 6, y + 3, 3, 3);
+    } else if (item.type === 'berry') {
+      g.fillStyle = '#276c38';
+      g.fillRect(x + 1, y + 5, 12, 6);
+      g.fillRect(x + 3, y + 3, 8, 2);
+      if (!saveData.items[item.id]) {
+        g.fillStyle = '#cb3657';
+        g.fillRect(x + 3, y + 5, 2, 2);
+        g.fillRect(x + 9, y + 7, 2, 2);
+        g.fillStyle = '#ffe07a';
+        g.fillRect(x + 4, y + 5, 1, 1);
+        g.fillRect(x + 10, y + 7, 1, 1);
+      }
+    } else if (item.type === 'sign') {
+      g.fillStyle = '#714422';
+      g.fillRect(x + 6, y + 6, 3, 9);
+      g.fillStyle = '#e2b965';
+      g.fillRect(x + 1, y + 1, 13, 7);
+      g.fillStyle = '#805326';
+      g.fillRect(x + 3, y + 3, 2, 1);
+      g.fillRect(x + 7, y + 3, 4, 1);
+      g.fillRect(x + 5, y + 5, 5, 1);
+    } else if (item.type === 'stone') {
+      g.fillStyle = '#777b84';
+      g.fillRect(x + 1, y + 7, 12, 6);
+      g.fillRect(x + 3, y + 4, 7, 5);
+      g.fillStyle = '#a8adb3';
+      g.fillRect(x + 4, y + 5, 3, 2);
+    } else if (item.type === 'crystal') {
+      g.fillStyle = '#527bdb';
+      g.fillRect(x + 4, y + 2, 5, 3);
+      g.fillRect(x + 2, y + 5, 9, 6);
+      g.fillStyle = '#91e8ff';
+      g.fillRect(x + 4, y + 4, 2, 5);
+      g.fillRect(x + 7, y + 6, 2, 3);
+    }
+  });
+}
+
+function nearbyInteraction() {
+  const playerX = player.x + 8;
+  const playerY = player.y + 8;
+  const choices = [];
+  const add = (type, item, x, y) => {
+    const distance = Math.hypot(playerX - x, playerY - y);
+    if (distance <= 26) choices.push({ type, item, x, y, distance });
+  };
+  const challenge = findNearbyChallenge();
+  if (challenge) add('challenge', challenge, challenge.x * TILE_SIZE + 8, challenge.y * TILE_SIZE + 8);
+  wildlife.forEach((creature) => {
+    const position = wildlifePosition(creature);
+    add('creature', creature, position.x + 5, position.y + 5);
+  });
+  worldObjects.forEach((item) => add('object', item, item.x * TILE_SIZE + 8, item.y * TILE_SIZE + 8));
+  return choices.sort((a, b) => a.distance - b.distance)[0] || null;
+}
+
+function interactNearby() {
+  const target = nearbyInteraction();
+  if (!target) return showToast('Acercate a una criatura, flor o letrero para interactuar.');
+  if (target.type === 'challenge') return interactWithChallenge();
+  if (target.type === 'creature') return showToast(`${target.item.name}: ${target.item.message}`, 4000);
+  const item = target.item;
+  if (item.type === 'berry') {
+    if (saveData.items[item.id]) return showToast('Este arbusto ya no tiene bayas maduras.');
+    saveData.items[item.id] = true;
+    if (!persistProgress()) return showToast('No se pudo guardar la baya en tu mochila.', 4000);
+  }
+  showToast(item.message, 4000);
+}
+
+function jump() {
+  if (player.jump > 0) return;
+  player.jump = 18;
+}
+
 function getSilhouette(challenge) {
   if (silhouetteSprites[challenge.id]) return silhouetteSprites[challenge.id];
 
@@ -412,6 +713,7 @@ function canMoveTo(tileX, tileY) {
 }
 
 function updatePlayer() {
+  if (player.jump > 0) player.jump--;
   if (player.moving > 0) {
     const direction = DIRECTIONS[player.dir];
     player.x += direction[0] * 2;
@@ -564,9 +866,10 @@ function closePanels() {
 function openInventory() {
   mode = 'inv';
   const inventory = $('#inv');
+  const berries = Object.keys(saveData.items).filter((id) => id.startsWith('berry-')).length;
   inventory.innerHTML = `
     <h2>Inventario · ${countCaptured()}/12</h2>
-    <small>Cada criatura es un reto resuelto.</small>
+    <small>Cada criatura es un reto resuelto. Bayas recogidas: ${berries}/3.</small>
     <div class="grid">${challenges.map((challenge) => {
       const captured = saveData.cap[challenge.id];
       const image = captured ? getCreatureSprite(challenge) : getSilhouette(challenge);
@@ -680,11 +983,17 @@ addEventListener('keydown', (event) => {
     return;
   }
 
+  if (event.repeat && [' ', 'enter', 'e'].includes(key)) return;
   keys[key] = 1;
   if (mode === 'map') {
-    if ([' ', 'enter', 'e'].includes(key)) {
+    if (key === ' ') {
       event.preventDefault();
-      interactWithChallenge();
+      const challenge = findNearbyChallenge();
+      if (challenge && !saveData.cap[challenge.id]) interactWithChallenge();
+      else jump();
+    } else if (key === 'enter' || key === 'e') {
+      event.preventDefault();
+      interactNearby();
     } else if (key === 'i') {
       openInventory();
     } else if (key.startsWith('arrow')) {
@@ -713,15 +1022,48 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-$('#begin').onclick = () => {
+$('#choose-screen').onclick = () => {
   if (mode !== 'start' || !challenges.length) return;
+  $('#story-screen').hidden = true;
+  $('#character-screen').hidden = false;
+  renderCharacterSelection();
+};
+
+$('#back-story').onclick = () => {
+  chosenCharacterId = null;
+  $('#begin').disabled = true;
+  $('#character-screen').hidden = true;
+  $('#story-screen').hidden = false;
+};
+
+$('#previous-character').onclick = () => browseCharacter(-1);
+$('#next-character').onclick = () => browseCharacter(1);
+
+$('#skills-toggle').onclick = () => {
+  const panel = $('#skills-panel');
+  panel.hidden = !panel.hidden;
+  $('#skills-toggle').setAttribute('aria-expanded', String(!panel.hidden));
+  $('#skills-toggle').textContent = panel.hidden ? 'VER HABILIDADES' : 'OCULTAR HABILIDADES';
+};
+
+$('#select-character').onclick = () => {
+  chosenCharacterId = characters[activeCharacterIndex].id;
+  renderCharacterSelection();
+};
+
+$('#begin').onclick = () => {
+  if (mode !== 'start' || !challenges.length || !chosenCharacterId) return;
+  player.characterId = chosenCharacterId;
   mode = 'map';
   $('#start').style.display = 'none';
-  showToast('Camina hasta una cápsula brillante y pulsa Espacio.', 4000);
+  showToast('Flechas: moverte · Espacio: saltar o abrir capsula cercana · E: interactuar · I: mochila.', 5000);
 };
 
 fetch('/api/retos')
-  .then((response) => response.json())
+  .then((response) => {
+    if (!response.ok) throw new Error(`Error HTTP ${response.status}`);
+    return response.json();
+  })
   .then((data) => {
     if (!Array.isArray(data) || !data.length) {
       throw new Error('La lista de retos está vacía.');
@@ -729,11 +1071,12 @@ fetch('/api/retos')
     challenges = data;
     buildMap();
     mode = 'start';
-    $('#begin').disabled = false;
-    $('#begin').textContent = 'Entrar al laboratorio';
+    $('#choose-screen').disabled = false;
+    $('#choose-screen').textContent = 'SELECCIONAR PERSONAJE';
     gameLoop();
   })
-  .catch(() => {
-    $('#begin').textContent = 'No se pudo cargar el laboratorio';
+  .catch((error) => {
+    console.error('No se pudo cargar el laboratorio.', error);
+    $('#choose-screen').textContent = 'No se pudo cargar el laboratorio';
     showToast('No se pudo cargar la lista de retos.', 9000);
   });
