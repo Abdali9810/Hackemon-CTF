@@ -125,3 +125,4 @@ button,.download{font-size:10px;line-height:1.5}
 .medal img{width:36px;height:36px;image-rendering:pixelated}
 .medal small{color:#9be8c8}
 .medal.off{opacity:.4;filter:grayscale(1)}
+#msg.zone{left:15%;right:15%;bottom:auto;top:38%;background:#16241cee;border:3px solid #47745b;color:#9be8c8;text-align:center;font-size:16px;letter-spacing:.2em;text-transform:uppercase}
