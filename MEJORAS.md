@@ -40,6 +40,7 @@ Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 | P2-11 | Ambiente sonoro por zona: zumbido grave Z3, brillo Z2 (`setZone` en HackemonMusic) | `958b460` | `game.js` + `game-audio.js` |
 | P2-12 | Ciclo suave de iluminación día/noche sobre el mapa | `b817cd0` | `game.js` |
 | P2-13 | Z1 renombrada "Ruta Césped" → "Pradera Recon" | `4b4869f` | `game.js` + `index.html` |
+| P2-14 | Cabecera visible siempre; retos/inventario empiezan bajo el HUD (corrige enfoque de P2-2) | `8ab139a` | `game.js` + `game.css` |
 
 Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/npcTalk); para cherry-pick conviene tomar ambos.
 
