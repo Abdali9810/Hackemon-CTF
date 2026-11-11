@@ -1,9 +1,13 @@
 # Plan de mejoras — rama `mejoras`
 
-Cada mejora es **un commit independiente**: `git cherry-pick <sha>` de la que
-quieras, descarta las demás. Ninguna depende de otra.
+Este documento registra las mejoras implementadas en la rama `mejoras`.
+Se conserva el alcance actual del juego: **12 retos en 3 gimnasios/zonas**.
+El contenido y las soluciones de los retos 1–6 se mantienen sin cambios; las
+mejoras de esta rama son principalmente visuales y de experiencia de juego.
+No se incluyen planes para añadir retos ni una cuarta zona.
 
-Leyenda: ✅ implementada · ⏳ pendiente de aprobación
+Cada funcionalidad se mantiene en commits separados para facilitar pruebas y
+cherry-pick. Cuando una mejora depende de otra, se indica en las notas.
 
 ---
 
@@ -28,7 +32,7 @@ Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 | # | Mejora | Commit | Toca |
 |---|--------|--------|------|
 | P2-1 | Minimapa: arriba-izquierda, solo en mapa, toggle con tecla **N** | `bd85bfc` | `game.js` + `game.css` + `index.html` |
-| P2-2 | HUD solo en mapa/diálogos — ya no solapa paneles/inventario/menú | `d2c9abf` | `game.js` |
+| P2-2 | Ajuste inicial del HUD para evitar solapes (revisado por P2-14) | `d2c9abf` | `game.js` |
 | P2-3 | Ventana responsive hasta 1440px + textos de paneles escalables | `7431d78` | `game.css` |
 | P2-4 | Textos de ayuda más grandes (footer `.k`, intro `.controls`) | `a3130d2` | `game.css` |
 | P2-5 | Árboles y flores con mejor pixel art (sombra, tronco, tallo, pétalos) | `f195181` | `game.js` |
@@ -50,63 +54,8 @@ Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/
 - **Niña detective Z1** (`GIRL_LINES`): metadatos/Comment PNG, exiftool/strings, recon pasivo, "cada píxel es una pista"
 - **Hacker retirado Z3** (`HACKER_LINES`): enumerar antes de atacar, comilla SQLi `admin'--`, port knocking, cabeceras, "root con paciencia"
 
-# Parte 3 — plan: completar los retos faltantes (retos.md)
-
-El diseño original (`retos.md`) define **16 retos en 4 gimnasios**; el juego
-tiene **12 en 3 zonas**. Análisis de qué falta y cómo adaptarlo manteniendo la
-coherencia (mismo formato `r()`, pistas progresivas con costo, ética,
-artefactos descargables, servicios locales).
-
-## Entorno objetivo: Kali VM + contenedores = "las otras VMs"
-
-El plan original pedía 2 VMs (Docker host + atacante Kali). Corriendo este
-compose dentro de la VM Kali, el propio contenedor ES la víctima: tiene IP
-real en `hackemon-ctf_default` (172.x) alcanzable desde Kali — nmap, curl y
-nc funcionan de verdad contra ella. Los retos de clase pasan de "simulados"
-a "reales contra localhost/red interna".
-
-## Estado por reto del diseño original
-
-| retos.md | Estado en el juego | Propuesta |
-|----------|--------------------|-----------|
-| R01 FOCA metadatos | ✅ = reto 1 | — |
-| R02 IPv6 nslookup | ✅ = reto 2 | — |
-| R03 DNSDumpster/IANA | ❌ **PDF ya en repo, sin reto** | Reto nuevo Z1: descargar `informe_recon_iana_oculto.pdf`, analizar con FOCA/exiftool → respuesta `220 IANA FTP Server` (flag `CORPX{220_iana_ftp_server}`). **Solo cablea lo que ya existe.** |
-| R04 curl FTP banner | ❌ | Servicio TCP falso en puerto local (helper `tcp()` ya existe): `curl 127.0.0.1:PORT` → banner `220 CorpX FTP` con flag. Z3. |
-| R05 nmap -sn | ❌ | Artefacto: `nmap_sn.txt` (salida simulada) → identificar la IP objetivo. Z2, coherente con retos de análisis. |
-| R06 nmap -sS -sV | ❌ | Igual: `nmap_sv.txt` simulado → puerto+versión de Apache. Z2. |
-| R07 SMB NSE | ❌ | Artefacto `smb_os_discovery.txt` → dominio/shares. Z2. |
-| R08 SNMP 161 | ❌ | Artefacto `snmp_users.txt` → usuarios enumerados. Z2. |
-| R09 pcap HTTP | ✅ ≈ reto 5 | — |
-| R10 nmap vuln XML | ❌ | Artefacto `vuln_report.xml` (salida -oX) → hallar CVE/flag. Z3. |
-| R11 backdoor.php | ❌ | Endpoint `/backdoor.php?cmd=` en 8081: shell simulada — solo responde a `cat reporte-notas.txt` (o similar) devolviendo la flag. Z3. |
-| R12 netcat shell | ❌ | Servicio `tcp()` que al conectar y enviar el comando correcto devuelve flag — simula la reverse shell. Z3. |
-| R13 SQLi POST | ✅ = reto 10 | — |
-| R14 SQLi UNION GET | ❌ | Endpoint `/buscar?q=` en 8081 vulnerable a UNION: `1 UNION SELECT ...` devuelve la flag. Z3. |
-| R15 SQLi blind | ❌ | Endpoint `/perfil?id=` boolean-blind en 8081: `?id=1 AND 1=1` vs `AND 1=2` cambian la página → inferir flag carácter a carácter (o respuesta simplificada para nivel intro). Z3. |
-| R16 file upload webshell | ❌ | Endpoint `/subir` en 8081 que valida extensión/MIME de forma bypasseable → al "ejecutar" el archivo subido muestra flag. Z3. |
-
-## Fases propuestas (cada item = commit independiente)
-
-En Kali, la mayoría pasa a ser **reto real** (herramienta real contra la IP
-del contenedor o servicios `tcp()`/endpoints 8081):
-
-- **Fase A — retos reales en el lab** (sin tocar el mapa): R03-PDF (cablear
-  artefacto + exiftool), R04 FTP banner `tcp()`, R05 `nmap -sn` a la IP del
-  contenedor, R06 `nmap -sS -sV` a sus puertos, R11 `/backdoor.php`,
-  R12 listener `nc`, R14 `/buscar` UNION, R15 `/perfil` blind, R16 `/subir`
-  upload bypass.
-- **Fase B — artefactos/artificiales** (lo que no se puede levantar real
-  en el contenedor): R07 SMB, R08 SNMP, R10 vuln XML → salidas simuladas en
-  `artefactos.py` (opcionalmente responder fake en puertos con `tcp()`).
-- **Fase C — 4ª zona "Gimnasio Élite"**: W 48→64 tiles, 3er río+guardia en
-  x=47, `ZN[4]/ZC[4]`, 4ª medalla, HUD "N/4". Los retos difíciles (blind,
-  upload, shell) quedan aislados como contenido avanzado.
-
-Fuera de alcance: DNSDumpster/Shodan reales, Mutillidae y DVWA externos
-(los equivalentes en 8081 cubren el mismo concepto).
-
 ## Verificación
 
-`static/` va por volumen → `Ctrl+F5`. Solo M2 pide rebuild
-(`docker compose up --build -d`). Todo lo demás ya está en vivo.
+Los archivos de `app/static/` se montan como volumen: refrescar con `Ctrl+F5`
+para ver cambios. M2 modifica `app/main.py` y requiere rebuild con
+`docker compose up --build -d`.
