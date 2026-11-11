@@ -2,7 +2,9 @@ const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
 let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',PLAYER='',ADMIN=null,DLG=null,lastZ=0;
+let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0;
 let playerSkinColor='#2fa84f';
+let playerAccessory='cap';
 const characters=[
  {id:'byte',name:'BYTE',role:'Especialista web',description:'Encuentra detalles y pistas que suelen pasar desapercibidos.',pants:'#2b4a9a',hat:'#f8f8f8',hatBand:'#e03030',hair:'#53331e',accent:'#ffde00',headwear:'cap',skills:['Ojo de codigo · detecta detalles ocultos','Analisis web · experto en aplicaciones']},
  {id:'cipher',name:'CIPHER',role:'Experto en sistemas',description:'Reconoce patrones y encuentra rutas bloqueadas.',pants:'#26334e',hat:'#252a3b',hatBand:'#f5bc35',hair:'#372b28',accent:'#75d9e8',headwear:'hood',skills:['Lectura de patrones · une pistas','Resolucion metódica de retos']},
@@ -14,8 +16,9 @@ if(!S||typeof S!=='object')S={cap:{},hints:{}};
 if(!S.cap||typeof S.cap!=='object')S.cap={};
 if(!S.hints||typeof S.hints!=='object')S.hints={};
 if(S.skin)playerSkinColor=S.skin;
+if(S.accessory==='bow'||S.accessory==='cap')playerAccessory=S.accessory;
 if(characters.some(ch=>ch.id===S.character)){chosenCharacterId=S.character;activeCharacterIndex=characters.findIndex(ch=>ch.id===chosenCharacterId)}
-const persist=()=>{try{S.skin=playerSkinColor;if(chosenCharacterId)S.character=chosenCharacterId;localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
+const persist=()=>{try{S.skin=playerSkinColor;S.accessory=playerAccessory;if(chosenCharacterId)S.character=chosenCharacterId;localStorage.setItem('ctfm1',JSON.stringify(S))}catch(e){}};
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const nz=z=>R.filter(r=>r.zona===z&&S.cap[r.id]).length,total=()=>R.filter(r=>S.cap[r.id]).length,unl=z=>z===1||!!ADMIN||nz(z-1)>=4;
 const basePts=r=>r.zona===1?100:r.zona===2?150:200;
@@ -23,13 +26,56 @@ const revHints=r=>typeof S.hints[r.id]==='number'?Math.min(S.hints[r.id],(r.pist
 const earned=r=>Math.max(0,basePts(r)-revHints(r)*15);
 const score=()=>R.reduce((s,r)=>s+(S.cap[r.id]?earned(r):0),0);
 const hs=(x,y)=>((Math.imul(x,73856093)^Math.imul(y,19349663))>>>0)%100;
+function trackStartPointer(e){
+ if(e.pointerType!=='mouse'||!R.length||matchMedia('(prefers-reduced-motion: reduce)').matches||($('#landing-screen').hidden&&$('#story-screen').hidden&&$('#character-screen').hidden))return;
+ const now=performance.now();if(now-startWaveAt<180)return;startWaveAt=now;
+ const bounds=($('#character-screen').hidden?$('#start-world'):$('#character-world')).parentElement.getBoundingClientRect(),count=Math.min(6,R.length);
+ startWaves.push({x:e.clientX-bounds.left,y:e.clientY-bounds.top,started:now,creatures:Array.from({length:count},(_,i)=>R[(startWaveCount+i)%R.length])});
+ startWaveCount=(startWaveCount+count)%R.length;if(startWaves.length>4)startWaves.shift()
+}
+function startEdgePoint(distance,width,height,pad){
+ const w=Math.max(1,width-pad*2),h=Math.max(1,height-pad*2),perimeter=2*(w+h);let d=distance%perimeter;
+ if(d<w)return{x:pad+d,y:pad,dx:1,dy:0};
+ d-=w;if(d<h)return{x:width-pad,y:pad+d,dx:0,dy:1};
+ d-=h;if(d<w)return{x:width-pad-d,y:height-pad,dx:-1,dy:0};
+ d-=w;return{x:pad,y:height-pad-d,dx:0,dy:-1}
+}
+function drawStartAmbience(now){
+ const characterScreen=!$('#character-screen').hidden,screenVisible=characterScreen||!$('#landing-screen').hidden||!$('#story-screen').hidden;
+ if(mode!=='start'||!screenVisible){for(const id of ['start-world','character-world']){const canvas=$(`#${id}`);canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height)}return}
+ const canvas=characterScreen?$('#character-world'):$('#start-world'),bounds=canvas.parentElement.getBoundingClientRect(),width=bounds.width,height=bounds.height;
+ if(!width||!height)return;
+ const ratio=Math.min(devicePixelRatio||1,2),pixelWidth=Math.round(width*ratio),pixelHeight=Math.round(height*ratio);
+ if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){canvas.width=pixelWidth;canvas.height=pixelHeight}
+ const ctx=canvas.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);ctx.imageSmoothingEnabled=false;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,dt=Math.min((now-startLastFrame||16)/1000,.05);startLastFrame=now;
+ const pad=22,perimeter=2*(Math.max(1,width-pad*2)+Math.max(1,height-pad*2));
+ for(const creature of startCreatures){
+  if(!reduced)creature.progress=(creature.progress+creature.speed*dt/perimeter)%1;
+  const point=startEdgePoint(creature.progress*perimeter,width,height,pad),bob=reduced?0:Math.sin(now/180+creature.progress*30)*2;
+  ctx.fillStyle='#06120c66';ctx.beginPath();ctx.ellipse(point.x,point.y+5,12,3,0,0,Math.PI*2);ctx.fill();
+  ctx.save();ctx.globalAlpha=.9;ctx.translate(point.x,point.y-13+bob);if(point.dx<0)ctx.scale(-1,1);
+  ctx.drawImage(mk(creature.r),-12,-12,24,24);ctx.restore()
+ }
+ if(reduced){startWaves=[];return}
+ startWaves=startWaves.filter(wave=>now-wave.started<950);
+ for(const wave of startWaves){
+  const progress=(now-wave.started)/950,radius=16+progress*112;
+  ctx.strokeStyle=`rgba(140,229,181,${(1-progress)*.5})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(wave.x,wave.y,radius,0,Math.PI*2);ctx.stroke();
+  wave.creatures.forEach((creature,index)=>{
+   const angle=index/wave.creatures.length*Math.PI*2+progress*.25,x=wave.x+Math.cos(angle)*radius,y=wave.y+Math.sin(angle)*radius;
+   ctx.globalAlpha=1-progress;ctx.drawImage(mk(creature),x-8,y-8,16,16)
+  })
+ }
+ ctx.globalAlpha=1
+}
 function toast(s,ms=2800,cls=''){const m=$('#msg');m.className=cls;m.textContent=s;m.style.display='block';clearTimeout(tmr);tmr=setTimeout(()=>m.style.display='none',ms)}
-function drawPreview(id,d,ch){const canvas=$(`#${id}`),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.scale(6,6);drawCharacter(ctx,8,1,d,0,ch);ctx.restore()}
+function drawPreview(id,d,ch){const canvas=$(`#${id}`),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.scale(6,6);drawCharacter(ctx,(canvas.width/6-16)/2,(canvas.height/6-16)/2,d,0,ch);ctx.restore()}
 function renderCharacterSelection(){const ch=characters[activeCharacterIndex];
  $('#character-count').textContent=`${String(activeCharacterIndex+1).padStart(2,'0')} / ${String(characters.length).padStart(2,'0')}`;
  $('#character-role').textContent=ch.role;$('#character-name').textContent=ch.name;$('#character-description').textContent=ch.description;
- $('#character-skills').innerHTML=ch.skills.map(skill=>`<li>${esc(skill)}</li>`).join('');
- $('#skills-panel').hidden=true;$('#skills-toggle').setAttribute('aria-expanded','false');$('#skills-toggle').textContent='VER HABILIDADES';
+ $('#character-skills').innerHTML=ch.skills.map(skill=>{const normalized=skill.charAt(0).toLocaleUpperCase('es')+skill.slice(1);return`<li>${esc(normalized)}</li>`}).join('');
+ document.querySelectorAll('.accessory-option').forEach(button=>{const selected=button.dataset.accessory===playerAccessory;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected))});
  $('#select-character').textContent=chosenCharacterId===ch.id?'PERSONAJE ELEGIDO':'ELEGIR ESTE PERSONAJE';
  $('#select-character').disabled=chosenCharacterId===ch.id;$('#begin').disabled=!chosenCharacterId;
  drawPreview('preview-front',0,ch);drawPreview('preview-back',1,ch)}
@@ -47,7 +93,7 @@ function initVolumes(){const v=window.HackemonMusic.getVolumes();
 function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true')}
 function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false')}
 function restartChallenges(){if(!window.confirm('¿Empezar una nueva partida? Se borrarán todas las criaturas capturadas.'))return;S={cap:{},hints:{},skin:playerSkinColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
-function exitToStart(){if(!window.confirm('¿Salir al inicio? Se iniciará una nueva partida y se borrará el progreso actual.'))return;S={cap:{},hints:{},skin:playerSkinColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
+function exitToStart(){if(!window.confirm('¿Salir al inicio? Se iniciará una nueva partida y se borrará el progreso actual.'))return;S={cap:{},hints:{},skin:playerSkinColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
 const QUIPS=[
  r=>['¡Vaya, vaya!',`Capturaste a ${r.criatura}, ${PLAYER}. No te pongas la capucha de hacker todavía: hasta un reloj roto acierta dos veces al día.`],
  r=>['¿Fue suerte?',`${r.criatura} ya es tuyo. Los logs dicen que fue habilidad; nosotros preferimos esperar a la auditoría.`],
@@ -124,8 +170,7 @@ function spr(x,y,d,fr){const ch=characters.find(item=>item.id===P.characterId)||
 function drawCharacter(ctx,x,y,d,fr,ch){const f=(c,a,b,w,h)=>{ctx.fillStyle=c;ctx.fillRect(x+a,y+b,w,h)};
  f('rgba(0,0,0,.25)',3,13,10,3);f(ch.pants,4,10,3,5-(fr===1?1:0));f(ch.pants,9,10,3,5-(fr===2?1:0));f(playerSkinColor,3,6,10,5);f('#f0c8a0',2,7,1,3);f('#f0c8a0',13,7,1,3);
  f(ch.hair,4,1,8,6);if(d!==1)f('#f0c8a0',4,2,8,5);else f(ch.hair,4,1,8,5);
- if(ch.headwear==='hood'){f(ch.hat,2,0,12,2);f(ch.hat,1,2,2,4);f(ch.hat,13,2,2,4);f(ch.hatBand,2,2,12,1)}
- else if(ch.headwear==='headset'){f(ch.hat,4,0,8,2);f(ch.accent,1,3,2,4);f(ch.accent,13,3,2,4);f(ch.hatBand,4,0,8,1)}
+ if(playerAccessory==='bow'){f('#ed5b91',3,0,4,2);f('#ed5b91',9,0,4,2);f('#ff9bbd',4,0,2,1);f('#ff9bbd',10,0,2,1);f('#f8d030',7,1,2,2)}
  else{f(ch.hat,3,0,10,3);f(ch.hatBand,3,3,10,1);f(ch.accent,7,1,2,1)}
  if(d===0){f('#222',6,4,1,1);f('#222',9,4,1,1)}if(d===2)f('#222',5,4,1,1);if(d===3)f('#222',10,4,1,1)}
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -294,11 +339,11 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
 function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
 function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><p><b>Puntuación: ${score()} pts</b></p><div class=medals>${[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}">${(S.pure||{})[z]?`<img class=pur src="${pureImg().toDataURL()}" title="Zona sin pistas">`:''}<img src="${medalImg(z).toDataURL()}"><small>${(S.medals||{})[z]?MED[z]:'???'}</small></div>`).join('')}</div><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
  return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revHints(r)?' (-'+revHints(r)*15+' pistas)':''}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
-function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel');
- p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div>${ADMIN?`<div class=admin-box><b>Admin · Respuesta:</b> <code>${esc(ADMIN[r.id]||'')}</code><br><button id=admin-skip>Saltar reto</button></div>`:''}<div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})${revHints(r)?' -'+revHints(r)*15+' pts ya reveladas':''}</button><p><input id=fl placeholder="${r.id===2?'Escribe la respuesta':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
+function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel'),pistas=Array.isArray(r.pistas)?r.pistas:[];
+ p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div>${ADMIN?`<div class=admin-box><b>Admin · Respuesta:</b> <code>${esc(ADMIN[r.id]||'')}</code><br><button id=admin-skip>Saltar reto</button></div>`:''}<div id=ph></div>${Array.isArray(r.pistas)?`<button id=bh ${pistas.length?'':'disabled'}>Pedir pista (0/${pistas.length})${revHints(r)?' -'+revHints(r)*15+' pts ya reveladas':''}</button>`:'<p class="bad">Las pistas no están disponibles en esta versión del servidor. Actualiza y reinicia el laboratorio.</p>'}<p><input id=fl placeholder="${r.id===2?'Escribe la respuesta':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
  p.style.display='block';$('#fl').focus();
  if(ADMIN)$('#admin-skip').onclick=()=>captureSuccess(r,'Modo admin: reto saltado. Lanzando cápsula…');
- $('#bh').onclick=()=>{if(h<r.pistas.length){$('#ph').innerHTML+=`<p>${esc(r.pistas[h])}</p>`;h++;if(typeof S.hints[r.id]!=='number'||h>S.hints[r.id])S.hints[r.id]=h;persist();const pen=revHints(r)*15;$('#bh').textContent='Pedir pista ('+h+'/'+r.pistas.length+')'+(pen?' -'+pen+' pts':'');}};
+ if(pistas.length)$('#bh').onclick=()=>{if(h<pistas.length){$('#ph').innerHTML+=`<p>${esc(pistas[h])}</p>`;h++;if(typeof S.hints[r.id]!=='number'||h>S.hints[r.id])S.hints[r.id]=h;persist();const pen=revHints(r)*15;$('#bh').textContent='Pedir pista ('+h+'/'+pistas.length+')'+(pen?' -'+pen+' pts':'');}};
  $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='bad';o.textContent='Escribe una bandera primero.';return}
   try{const m=v.match(/^corpx\{(.+)\}$/i),inner=m?m[1]:v;const submittedFlag=r.id===2?inner:`CORPX{${inner}}`;const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:submittedFlag})}),d=await res.json();
    if(d.ok)captureSuccess(r,'¡Bandera correcta! Lanzando cápsula de captura…');
@@ -314,7 +359,7 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start';document.body.classList.toggle('intro-active',mode==='start');if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
@@ -324,16 +369,18 @@ $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
 $('#menu-restart').onclick=restartChallenges;
 $('#menu-exit').onclick=exitToStart;
+$('#enter-game').onclick=()=>{if(mode!=='start'||!R.length)return;$('#landing-screen').hidden=true;$('#story-screen').hidden=false;$('#start').scrollTop=0};
 $('#choose-screen').onclick=()=>{if(mode!=='start'||!R.length)return;$('#start').scrollTop=0;$('#story-screen').hidden=true;$('#character-screen').hidden=false;renderCharacterSelection()};
 $('#back-story').onclick=()=>{$('#start').scrollTop=0;$('#character-screen').hidden=true;$('#story-screen').hidden=false};
 $('#previous-character').onclick=()=>browseCharacter(-1);
 $('#next-character').onclick=()=>browseCharacter(1);
-$('#skills-toggle').onclick=()=>{const p=$('#skills-panel');p.hidden=!p.hidden;$('#skills-toggle').setAttribute('aria-expanded',String(!p.hidden));$('#skills-toggle').textContent=p.hidden?'VER HABILIDADES':'OCULTAR HABILIDADES'};
+document.querySelectorAll('.accessory-option').forEach(button=>button.addEventListener('click',()=>{playerAccessory=button.dataset.accessory;persist();renderCharacterSelection()}));
 $('#select-character').onclick=()=>{chosenCharacterId=characters[activeCharacterIndex].id;persist();renderCharacterSelection()};
 $('#begin').onclick=()=>{if(!chosenCharacterId)return;persist();openLogin()};
 $('#login-form').onsubmit=submitLogin;$('#login-name').oninput=syncLogin;
 $('#login-back').onclick=()=>{$('#login').style.display='none';mode='start'};
 $('#dialog').onclick=nextDialog;
+$('#start').addEventListener('pointermove',trackStartPointer);
 $('#music-toggle').onclick=e=>{e.stopPropagation();setSoundPanel($('#sound-panel').hidden)};
 $('#sound-music').onclick=toggleMusic;
 $('#sound-panel').onclick=e=>e.stopPropagation();
@@ -343,4 +390,4 @@ document.querySelectorAll('.swatch').forEach(btn=>{
  if(btn.dataset.skin===playerSkinColor)btn.classList.add('active');
  btn.addEventListener('click',()=>{playerSkinColor=btn.dataset.skin;document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b===btn));persist();if(!$('#character-screen').hidden)renderCharacterSelection()});
 });
-fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;build();mode='start';window.HackemonMusic.setScene('menu');$('#choose-screen').disabled=false;$('#choose-screen').textContent='SELECCIONAR PERSONAJE';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#choose-screen').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});
+fetch('/api/retos').then(r=>r.json()).then(d=>{if(!Array.isArray(d)||!d.length)throw new Error('La lista de retos está vacía.');R=d;startCreatures=R.slice(0,8).map((r,i,list)=>({r,progress:i/list.length,speed:18+(i%3)*5}));build();mode='start';window.HackemonMusic.setScene('menu');$('#enter-game').disabled=false;$('#enter-game').textContent='ENTRAR AL MUNDO';$('#choose-screen').disabled=false;$('#choose-screen').textContent='SELECCIONAR PERSONAJE';loop()}).catch(e=>{console.error('No se pudieron cargar los retos.',e);$('#enter-game').textContent='No se pudo cargar el laboratorio';$('#choose-screen').textContent='No se pudo cargar el laboratorio';toast('No se pudo cargar la lista de retos.',9000)});

@@ -26,27 +26,48 @@
     </div>
 
     <section id="start" aria-label="Inicio de Hackémon">
+      <canvas id="start-world" aria-hidden="true"></canvas>
       <div class="start-content">
-        <header class="game-brand">
-          <p class="eyebrow">Hackémon · Mundo CTF</p>
-          <h1>HACKÉMON</h1>
-        </header>
+        <section id="landing-screen" class="intro landing-screen" aria-labelledby="landing-title">
+          <header class="game-brand">
+            <p class="eyebrow">MUNDO CTF · EDICIÓN ENTRENADORES</p>
+            <h1 id="landing-title">HACKÉMON</h1>
+            <p class="brand-tagline">Una aventura de criaturas, retos y descubrimiento</p>
+          </header>
+          <footer class="creator-credit">
+            <p>Inspirado en las aventuras clásicas de entrenadores y criaturas.</p>
+            <p>Creado por <strong>Richard Ludim Barajas Parrado</strong> y <strong>Yuliet Tatiana Sandoval Buitrago</strong>.</p>
+          </footer>
+          <button id="enter-game" class="start-button" type="button" disabled>Preparando el laboratorio…</button>
+          <p class="landing-prompt">Mueve el cursor y descubre las criaturas</p>
+        </section>
 
-        <section id="story-screen" class="intro" aria-labelledby="intro-title">
+        <section id="story-screen" class="intro story-screen" aria-labelledby="intro-title" hidden>
           <h2 id="intro-title">Una aventura entre redes y criaturas</h2>
-          <p>Las criaturas digitales protegen secretos y pistas en tres zonas. Explora sus rutas, resuelve desafíos y aprende a cuidar la tecnología usando tus habilidades de forma responsable.</p>
+          <p class="story-summary">Las criaturas digitales protegen secretos y pistas en tres zonas. Explora sus rutas, resuelve desafíos y aprende a cuidar la tecnología usando tus habilidades de forma responsable.</p>
           <div class="chapters" aria-label="Zonas del juego">
             <div class="chapter"><b>01 · Pradera Recon</b>Observa y explora</div>
             <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
             <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
           </div>
-          <p class="controls">Flechas / WASD para moverte · Espacio o Enter para abrir una cápsula cercana · I inventario · M menú · N minimapa</p>
-          <p class="flag-format">Cada reto indica el formato de su bandera.</p>
+          <section class="story-controls" aria-labelledby="controls-title">
+            <h3 id="controls-title">Controles de la aventura</h3>
+            <ul class="controls-list">
+              <li><kbd>↑ ↓ ← →</kbd><kbd>W A S D</kbd><span>Moverte por el mundo</span></li>
+              <li><kbd>Espacio</kbd><kbd>Enter</kbd><span>Abrir una cápsula cercana</span></li>
+              <li><kbd>Espacio</kbd><kbd>Enter</kbd><span>Hablar con personajes cercanos</span></li>
+              <li><kbd>I</kbd><span>Abrir el inventario</span></li>
+              <li><kbd>N</kbd><span>Mostrar u ocultar el minimapa</span></li>
+              <li><kbd>M</kbd><kbd>Esc</kbd><span>Abrir el menú o cerrar un panel</span></li>
+            </ul>
+          </section>
+          <p class="flag-format">Cada reto indica el formato de su bandera. ¡Explora con curiosidad y juega con responsabilidad!</p>
           <button id="choose-screen" type="button" disabled>Preparando el laboratorio…</button>
-          <p class="music-note">Música original: cambia en el menú, acompaña la exploración y tiene una melodía para cada reto.</p>
+          <p class="music-note">La música y el sonido se configuran desde el botón ♫.</p>
         </section>
 
         <section id="character-screen" class="intro character-screen" aria-labelledby="character-title" hidden>
+          <canvas id="character-world" aria-hidden="true"></canvas>
           <div class="selection-heading">
             <div>
               <p class="section-kicker">Elige tu entrenador</p>
@@ -69,11 +90,10 @@
               <p id="character-role" class="character-role"></p>
               <h3 id="character-name"></h3>
               <p id="character-description" class="character-description"></p>
-              <button id="skills-toggle" class="secondary-button" type="button" aria-expanded="false" aria-controls="skills-panel">Ver habilidades</button>
-              <div id="skills-panel" class="skills-panel" hidden>
-                <h3>Habilidades</h3>
+              <section class="skills-panel" aria-labelledby="skills-title">
+                <h4 id="skills-title">Habilidades</h4>
                 <ul id="character-skills"></ul>
-              </div>
+              </section>
               <div class="char-select">
                 <p class="char-label">Color del uniforme</p>
                 <div class="swatches" aria-label="Color del uniforme">
@@ -84,12 +104,19 @@
                   <button class="swatch" data-skin="#9b30c0" title="Morado" aria-label="Morado" style="--c:#9b30c0"></button>
                 </div>
               </div>
+              <div class="accessory-select">
+                <p class="char-label">Accesorio</p>
+                <div class="accessory-options" role="group" aria-label="Accesorio del personaje">
+                  <button class="accessory-option active" data-accessory="cap" type="button" aria-pressed="true">▰ Gorra</button>
+                  <button class="accessory-option" data-accessory="bow" type="button" aria-pressed="false">✿ Moño</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="character-actions">
-            <button id="previous-character" class="secondary-button" type="button" aria-label="Personaje anterior">Anterior</button>
+            <button id="previous-character" class="secondary-button" type="button" aria-label="Personaje anterior" title="Personaje anterior">← Anterior</button>
             <button id="select-character" type="button">Elegir este personaje</button>
-            <button id="next-character" class="secondary-button" type="button" aria-label="Siguiente personaje">Siguiente</button>
+            <button id="next-character" class="secondary-button" type="button" aria-label="Siguiente personaje" title="Siguiente personaje">Siguiente →</button>
           </div>
           <button id="begin" class="start-button" type="button" disabled>Continuar al acceso</button>
           <button id="back-story" class="text-button" type="button">Volver a la historia</button>
@@ -155,7 +182,7 @@
     <div id="inv"></div>
   </main>
 
-  <p class="k">Flechas / WASD: moverte · Espacio / Enter: abrir cápsula cercana · I: inventario · M / Esc: menú · N: minimapa</p>
+  <p id="controls-footer" class="k">Flechas / WASD: moverte · Espacio / Enter: abrir cápsula cercana · I: inventario · M / Esc: menú · N: minimapa</p>
 
   <script src="game-audio.js" defer></script>
   <script src="game.js" defer></script>

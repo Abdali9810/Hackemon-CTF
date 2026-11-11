@@ -45,6 +45,9 @@ cherry-pick. Cuando una mejora depende de otra, se indica en las notas.
 | P2-12 | Ciclo suave de iluminación día/noche sobre el mapa | `b817cd0` | `game.js` |
 | P2-13 | Z1 renombrada "Ruta Césped" → "Pradera Recon" | `4b4869f` | `game.js` + `index.html` |
 | P2-14 | Cabecera visible siempre; retos/inventario empiezan bajo el HUD (corrige enfoque de P2-2) | `8ab139a` | `game.js` + `game.css` |
+| P2-15 | Pantalla inicial independiente con título, créditos, criaturas pixeladas que recorren los bordes y ondas interactivas; botón para entrar al menú de historia | local | `index.html` + `game.js` + `game.css` |
+| P2-16 | Historia con efectos de criaturas y ondas, controles en lista visual y tipografía adaptable y legible sin scroll en portátiles | local | `index.html` + `game.js` + `game.css` |
+| P2-17 | Selección de entrenador adaptable con habilidades visibles, gorra/moño personalizables, criaturas y ondas interactivas, botones diferenciados y vistas previas centradas | local | `index.html` + `game.js` + `game.css` |
 
 Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/npcTalk); para cherry-pick conviene tomar ambos.
 
