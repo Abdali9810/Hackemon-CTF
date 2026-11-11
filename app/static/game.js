@@ -159,8 +159,22 @@ function update(){if(P.mv>0){const d=DD[P.dir];P.x+=d[0]*2;P.y+=d[1]*2;P.mv-=2;r
  P.dir=dir;const d=DD[dir],tx=P.x/16+d[0],ty=P.y/16+d[1];if(can(tx,ty)){P.mv=16;window.HackemonMusic.sfx.step(surface(tx,ty))}}
 function surface(tx,ty){const v=T[ty][tx];return v===4?([15,16,31,32].includes(tx)?'wood':'dirt'):v===5?'stone':'grass'}
 function near(){const tx=Math.round(P.x/16),ty=Math.round(P.y/16);return R.find(r=>Math.abs(r.x-tx)+Math.abs(r.y-ty)<=1)}
+function decor(x,y,tx,ty){const v=T[ty][tx],z=tx<15?1:tx<31?2:3,f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
+ if(hs(tx,ty)%9!==0)return;const t=hs(ty,tx)%3;
+ if(z===1&&v===0){
+  if(t===0){f('#e8e0d0',4,4,8,10);f('#9a9284',5,6,6,1);f('#9a9284',5,8,6,1);f('#9a9284',5,10,4,1)}
+  else if(t===1){g.strokeStyle='#2c3e50';g.lineWidth=1;g.strokeRect(x+3.5,y+3.5,6,6);f('#7ec8f0',4,4,4,4);f('#2c3e50',9,9,3,3)}
+  else{f('#3a5a3a',5,4,2,3);f('#3a5a3a',9,9,2,3);f('#3a5a3a',5,11,2,2);f('#3a5a3a',9,5,2,2)}}
+ else if(z===2&&v===0){
+  if(t===0){f('#26334e',3,9,10,4);f('#75d9e8',5,10,6,1);f('#75d9e8',5,12,3,1)}
+  else if(t===1){f('#3a4a5a',7,4,2,9);f('#75d9e8',6,2,4,2);f('#75d9e8',3,5,1,2);f('#75d9e8',12,5,1,2)}
+  else{f('#2c3e50',3,7,10,2);f('#f5bc35',3+(Math.floor(tm/8)+tx*2)%11,6,2,3)}}
+ else if(z===3&&v===5){
+  if(t===0){f('#10161a',3,4,10,8);f('#38a96b',4,6,3,1);f('#38a96b',4,8,5,1)}
+  else if(t===1){f('#c8a028',6,4,4,3);f('#8a7018',4,7,8,6);f('#f8e8a0',7,9,2,2)}
+  else{f('#e8e8e8',5,3,6,5);f('#10161a',6,5,1,1);f('#10161a',9,5,1,1);f('#e8e8e8',6,9,4,3);f('#10161a',7,10,1,1);f('#10161a',9,10,1,1)}}}
 function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max(0,Math.min(H*16-160,P.y+8-80));
- for(let ty=Math.floor(cy/16);ty<Math.ceil((cy+160)/16);ty++)for(let tx=Math.floor(cx/16);tx<Math.ceil((cx+240)/16);tx++)tile(T[ty][tx],tx*16-cx,ty*16-cy,tx,ty);
+ for(let ty=Math.floor(cy/16);ty<Math.ceil((cy+160)/16);ty++)for(let tx=Math.floor(cx/16);tx<Math.ceil((cx+240)/16);tx++){const X=tx*16-cx,Y=ty*16-cy;tile(T[ty][tx],X,Y,tx,ty);decor(X,Y,tx,ty)}
  const nr=near();
  R.forEach(r=>{const x=r.x*16-cx,y=r.y*16-cy,done=S.cap[r.id];g.fillStyle='#555';g.fillRect(x+3,y+11,10,4);
   if(!done){g.globalAlpha=.25+.2*Math.sin(tm/10+r.id);g.fillStyle='#fff';g.beginPath();g.arc(x+8,y+6,9,0,7);g.fill();g.globalAlpha=1}
