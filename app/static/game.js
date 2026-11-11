@@ -165,6 +165,7 @@ function guard(x,y,open){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,
 const P={x:48,y:256,dir:0,mv:0,characterId:null},DD=[[0,1],[0,-1],[-1,0],[1,0]];let lastT=0;
 function can(tx,ty){if(tx<0||ty<0||tx>=W||ty>=H)return false;
  const gd=guardAt(tx,ty);if(gd){guardTalk(gd);return false}
+ const fp=fisherPos();if(fp.x===tx&&fp.y===ty){fisherTalk();return false}
  return PAS.includes(T[ty][tx])}
 function update(){if(P.mv>0){const d=DD[P.dir];P.x+=d[0]*2;P.y+=d[1]*2;P.mv-=2;return}
  const k=keys,dir=(k.arrowdown||k.s)?0:(k.arrowup||k.w)?1:(k.arrowleft||k.a)?2:(k.arrowright||k.d)?3:-1;if(dir<0)return;
@@ -196,12 +197,35 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
   ball(x+8,y+6,5,0,done?'#777':ZC[r.zona]);if(done){g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText('✓',x+5,y+4)}
   if(r===nr&&!done){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',x+6,y-4+Math.sin(tm/6)*1.5)}});
  GD.forEach(d=>{const q=gpos(d);guard(q.x*16-cx,q.y*16-cy-4,unl(d.z))});
+ {const fp=fisherPos();fisher(fp.x*16-cx,fp.y*16-cy-4);
+  if(Math.abs(fp.x-Math.round(P.x/16))+Math.abs(fp.y-Math.round(P.y/16))<=2){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',fp.x*16-cx+6,fp.y*16-cy-8+Math.sin(tm/8)*1.5)}}
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
  drawFX(cx,cy);
  const z=P.x<240?1:P.x<496?2:3;if(lastZ&&z!==lastZ&&mode==='map')toast(`— ${ZN[z]} —`,1800,'zone');lastZ=z;
  const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${mcount()}/3 medallas · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt;
  drawMini()}
-function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
+const FISH_LINES=[
+ 'Los guardias no muerden, solo bloquean. Captura las 4 criaturas de tu zona y te dejarán pasar.',
+ 'Espacio abre una cápsula, I el inventario, M el menú y N el minimapa. Fácil, ¿no?',
+ 'Cada pista cuesta 15 puntos. Piensa dos veces antes de pedir una.',
+ 'Recuerdo cuando solía programar y hackear redes… qué buenos tiempos. Ahora solo pesco paquetes.',
+ 'Espero que estés usando el cerebro y no solo la IA, jaja.',
+ 'Aquí los peces saltan sin que nadie les haga ping. Cosas del río.',
+ 'Antes de pedir una pista, inténtalo una vez más. Mi récord de espera por un pez es de 40 años y contando.',
+ 'Si un reto te pide una descarga, el botón está en su cápsula. Y no, no puedo enseñarte a pescar flags.'];
+const fisherPos=()=>{for(let y=12;y<26;y++)if(T[y]&&T[y][17]===0)return{x:17,y};return{x:17,y:14}};
+let lastFT=0,lastFish=-1;
+function fisherTalk(){if(mode!=='map'||tm-lastFT<=90)return;lastFT=tm;
+ let i;do i=Math.floor(Math.random()*FISH_LINES.length);while(i===lastFish&&FISH_LINES.length>1);lastFish=i;
+ showDialog('Viejo pescador',[FISH_LINES[i]],null)}
+function fisher(x,y){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
+ f('rgba(0,0,0,.25)',3,13,10,3);f('#4a3a2a',4,10,3,5);f('#4a3a2a',9,10,3,5);f('#7a6a4a',3,6,10,5);f('#5a4a35',3,9,10,1);
+ f('#f0c8a0',4,1,8,6);f('#e8e8e8',5,4,6,3);f('#222',5,3,1,1);f('#222',9,3,1,1);f('#c8b070',3,0,10,2);f('#c8b070',5,-1,6,1);
+ g.strokeStyle='#8a5a2a';g.lineWidth=1;g.beginPath();g.moveTo(x+2,y+9);g.lineTo(x-5,y-1);g.stroke();
+ g.strokeStyle='#d8d8e0';g.beginPath();g.moveTo(x-5,y-1);g.lineTo(x-5+Math.sin(tm/20)*2,y+11);g.stroke()}
+function interact(){const r=near();
+ if(!r){const fp=fisherPos(),tx=Math.round(P.x/16),ty=Math.round(P.y/16);if(Math.abs(fp.x-tx)+Math.abs(fp.y-ty)<=1)fisherTalk();return}
+ if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
  $('#menu-toggle').style.display='none';
  window.HackemonMusic.setScene('encounter',r.id);
  toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
