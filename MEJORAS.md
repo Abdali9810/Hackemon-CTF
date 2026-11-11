@@ -57,6 +57,14 @@ tiene **12 en 3 zonas**. Análisis de qué falta y cómo adaptarlo manteniendo l
 coherencia (mismo formato `r()`, pistas progresivas con costo, ética,
 artefactos descargables, servicios locales).
 
+## Entorno objetivo: Kali VM + contenedores = "las otras VMs"
+
+El plan original pedía 2 VMs (Docker host + atacante Kali). Corriendo este
+compose dentro de la VM Kali, el propio contenedor ES la víctima: tiene IP
+real en `hackemon-ctf_default` (172.x) alcanzable desde Kali — nmap, curl y
+nc funcionan de verdad contra ella. Los retos de clase pasan de "simulados"
+a "reales contra localhost/red interna".
+
 ## Estado por reto del diseño original
 
 | retos.md | Estado en el juego | Propuesta |
@@ -80,19 +88,23 @@ artefactos descargables, servicios locales).
 
 ## Fases propuestas (cada item = commit independiente)
 
-- **Fase A — sin tocar el mapa** (encajan en zonas actuales, cada uno es un
-  commit): R03-PDF (cablear artefacto existente), R11 backdoor.php,
-  R14 UNION, R15 blind, R16 upload, R04 banner TCP, R12 shell TCP.
-- **Fase B — artefactos de análisis** (patrón ya usado en retos 5-9):
-  R05-R08 y R10 como salidas de herramientas simuladas generadas en
-  `artefactos.py`.
-- **Fase C — opcional, 4ª zona/gimnasio** (si se quieren 16 retos reales):
-  W 48→64 tiles, 3er río+guardia en x=47, `ZN[4]/ZC[4]`, 4ª medalla, HUD
-  "N/4". Toca constantes hardcodeadas (ríos 15-16/31-32, cortes 240/496).
+En Kali, la mayoría pasa a ser **reto real** (herramienta real contra la IP
+del contenedor o servicios `tcp()`/endpoints 8081):
 
-Fuera de alcance del lab local (se documentan, no se implementan):
-escaneos nmap reales a otra máquina, DNSDumpster/Shodan reales, Mutillidae
-y DVWA (existen alternativas simuladas arriba).
+- **Fase A — retos reales en el lab** (sin tocar el mapa): R03-PDF (cablear
+  artefacto + exiftool), R04 FTP banner `tcp()`, R05 `nmap -sn` a la IP del
+  contenedor, R06 `nmap -sS -sV` a sus puertos, R11 `/backdoor.php`,
+  R12 listener `nc`, R14 `/buscar` UNION, R15 `/perfil` blind, R16 `/subir`
+  upload bypass.
+- **Fase B — artefactos/artificiales** (lo que no se puede levantar real
+  en el contenedor): R07 SMB, R08 SNMP, R10 vuln XML → salidas simuladas en
+  `artefactos.py` (opcionalmente responder fake en puertos con `tcp()`).
+- **Fase C — 4ª zona "Gimnasio Élite"**: W 48→64 tiles, 3er río+guardia en
+  x=47, `ZN[4]/ZC[4]`, 4ª medalla, HUD "N/4". Los retos difíciles (blind,
+  upload, shell) quedan aislados como contenido avanzado.
+
+Fuera de alcance: DNSDumpster/Shodan reales, Mutillidae y DVWA externos
+(los equivalentes en 8081 cubren el mismo concepto).
 
 ## Verificación
 
