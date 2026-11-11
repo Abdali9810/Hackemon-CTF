@@ -57,7 +57,8 @@ let lastQuip=-1;
 function pickQuip(r){let i;do i=Math.floor(Math.random()*QUIPS.length);while(i===lastQuip);lastQuip=i;return QUIPS[i](r)}
 function captureSuccess(r,msg){closeAll(false);toast(msg);mode='enc';$('#menu-toggle').style.display='none';
  A={kind:'capture',r,k:0,done:()=>{S.cap[r.id]=Date.now();pendingMedal=nz(r.zona)>=4&&!(S.medals||{})[r.zona]?r.zona:null;
-  if(pendingMedal){S.medals=S.medals||{};S.medals[r.zona]=Date.now()}persist();captureResult=r;mode='capture-result';
+  if(pendingMedal){S.medals=S.medals||{};S.medals[r.zona]=Date.now();
+   if(R.filter(q=>q.zona===r.zona).every(q=>!S.hints[q.id])){S.pure=S.pure||{};S.pure[r.zona]=Date.now()}}persist();captureResult=r;mode='capture-result';
   const q=r.id===2?['Reto completado','¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.']:pickQuip(r);
   $('#capture-title').textContent=q[0];$('#capture-text').textContent=q[1];$('#capture-message').style.display='grid'}}}
 function showDialog(who,lines,then){mode='dialog';keys={};DLG={who,lines,i:0,then};$('#menu-toggle').style.display='none';$('#dialog-who').textContent=who;$('#dialog-text').textContent=lines[0];$('#dialog').hidden=false}
@@ -85,7 +86,7 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  lines.push('¿Listos? ¡Que empiece la aventura!');
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
 function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');
- if(pendingMedal){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[pendingMedal],40);toast(`¡${MED[pendingMedal]} conseguida! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
+ if(pendingMedal){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[pendingMedal],40);toast(`¡${MED[pendingMedal]} conseguida${(S.pure||{})[pendingMedal]?' · sin pistas':''}! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
  else toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null;
  if(total()===12){const hh=Object.values(S.hints||{}).reduce((a,b)=>a+b,0),s=Math.floor((Date.now()-(S.t0||Date.now()))/1000);
   $('#liga-stats').innerHTML=`Puntuación: <b>${score()} pts</b> · Medallas: ${mcount()}/3 · Pistas usadas: ${hh} · Tiempo: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
@@ -139,6 +140,8 @@ function mk(r){if(cc[r.id])return cc[r.id];const q=rng(r.id*7919+13),k=document.
  return cc[r.id]=k}
 function sil(r){if(cs[r.id])return cs[r.id];const k=document.createElement('canvas');k.width=k.height=10;const x=k.getContext('2d');x.drawImage(mk(r),0,0);x.globalCompositeOperation='source-in';x.fillStyle='#10161a';x.fillRect(0,0,10,10);return cs[r.id]=k}
 function tint(r,col){const k=document.createElement('canvas');k.width=k.height=10;const x=k.getContext('2d');x.drawImage(mk(r),0,0);x.globalCompositeOperation='source-atop';x.fillStyle=col;x.fillRect(0,0,10,10);return k}
+function pureImg(){const k=document.createElement('canvas');k.width=k.height=10;const x=k.getContext('2d');
+ x.fillStyle='#f8d030';[[4,0,2,2],[3,2,4,2],[1,4,8,2],[3,6,4,2],[4,8,2,2]].forEach(([a,b,w,h])=>x.fillRect(a,b,w,h));return k}
 function medalImg(z){const k=document.createElement('canvas');k.width=k.height=12;const x=k.getContext('2d');
  x.fillStyle='#b04040';x.fillRect(4,0,2,4);x.fillRect(7,0,2,4);
  x.fillStyle=ZC[z];x.beginPath();x.arc(6,8,4,0,7);x.fill();x.strokeStyle='#f8f8f8';x.lineWidth=1;
@@ -288,7 +291,7 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<235){ball(cx,gy,6,0,zc);drawFX(0,0);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
 function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
-function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><p><b>Puntuación: ${score()} pts</b></p><div class=medals>${[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}"><img src="${medalImg(z).toDataURL()}"><small>${(S.medals||{})[z]?MED[z]:'???'}</small></div>`).join('')}</div><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
+function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><p><b>Puntuación: ${score()} pts</b></p><div class=medals>${[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}">${(S.pure||{})[z]?`<img class=pur src="${pureImg().toDataURL()}" title="Zona sin pistas">`:''}<img src="${medalImg(z).toDataURL()}"><small>${(S.medals||{})[z]?MED[z]:'???'}</small></div>`).join('')}</div><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
  return `<div class="card ${got?'':'off'}"><img src="${(got?mk(r):sil(r)).toDataURL()}"><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revHints(r)?' (-'+revHints(r)*15+' pistas)':''}</small>`:''}</div>`}).join('')+`</div><button onclick="closeAll()">Cerrar (Esc)</button>`;v.style.display='block'}
 function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=0;const p=$('#panel');
  p.innerHTML=`<div class=row><img src="${sil(r).toDataURL()}"><div><h2>Reto ${r.id}: ${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · Criatura tipo ${esc(r.tipo)}</small></div></div><p>${esc(r.brief)}</p><p><b>Objetivo:</b> <code>${esc(r.objetivo)}</code></p>${r.descarga?`<p><a class=download href="${esc(r.descarga)}" download>Descargar archivo del reto</a></p>`:''}${r.herramienta_descarga?`<p><a class=download href="${esc(r.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>`:''}<p>${r.tools.map(t=>`<span class=chip>${esc(t)}</span>`).join('')}</p><div class=eth><b>Ética:</b> ${esc(r.etica)}</div>${ADMIN?`<div class=admin-box><b>Admin · Respuesta:</b> <code>${esc(ADMIN[r.id]||'')}</code><br><button id=admin-skip>Saltar reto</button></div>`:''}<div id=ph></div><button id=bh>Pedir pista (0/${r.pistas.length})${revHints(r)?' -'+revHints(r)*15+' pts ya reveladas':''}</button><p><input id=fl placeholder="${r.id===2?'Escribe la respuesta':'CORPX{...}'}" autocomplete=off><button id=bv>Validar bandera</button></p><p id=rs></p><button onclick="closeAll()">Volver al mapa (Esc)</button>`;
