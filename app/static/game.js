@@ -84,7 +84,7 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  lines.push('¿Listos? ¡Que empiece la aventura!');
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
 function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');
- if(pendingMedal){window.HackemonMusic.sfx.caught();toast(`¡${MED[pendingMedal]} conseguida! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
+ if(pendingMedal){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[pendingMedal],40);toast(`¡${MED[pendingMedal]} conseguida! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
  else toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null}
 function build(){
  for(let y=0;y<H;y++){T[y]=[];for(let x=0;x<W;x++){const n=hs(x,y),z3=x>=33;let v=z3?5:0;
@@ -173,6 +173,9 @@ function decor(x,y,tx,ty){const v=T[ty][tx],z=tx<15?1:tx<31?2:3,f=(c,a,b,w,h)=>{
   if(t===0){f('#10161a',3,4,10,8);f('#38a96b',4,6,3,1);f('#38a96b',4,8,5,1)}
   else if(t===1){f('#c8a028',6,4,4,3);f('#8a7018',4,7,8,6);f('#f8e8a0',7,9,2,2)}
   else{f('#e8e8e8',5,3,6,5);f('#10161a',6,5,1,1);f('#10161a',9,5,1,1);f('#e8e8e8',6,9,4,3);f('#10161a',7,10,1,1);f('#10161a',9,10,1,1)}}}
+const FX=[];
+function burst(x,y,col,n=24){for(let i=0;i<n;i++){const a=Math.random()*7,s=1+Math.random()*2;FX.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1,l:30+Math.random()*20,c:Math.random()<.5?col:'#fff'})}}
+function drawFX(cx,cy){for(let i=FX.length-1;i>=0;i--){const p=FX[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.04;if(--p.l<0){FX.splice(i,1);continue}g.globalAlpha=Math.min(1,p.l/20);g.fillStyle=p.c;g.fillRect(p.x-cx,p.y-cy,2,2)}g.globalAlpha=1}
 function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max(0,Math.min(H*16-160,P.y+8-80));
  for(let ty=Math.floor(cy/16);ty<Math.ceil((cy+160)/16);ty++)for(let tx=Math.floor(cx/16);tx<Math.ceil((cx+240)/16);tx++){const X=tx*16-cx,Y=ty*16-cy;tile(T[ty][tx],X,Y,tx,ty);decor(X,Y,tx,ty)}
  const nr=near();
@@ -182,6 +185,7 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
   if(r===nr&&!done){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',x+6,y-4+Math.sin(tm/6)*1.5)}});
  GD.forEach(d=>{const q=gpos(d);guard(q.x*16-cx,q.y*16-cy-4,unl(d.z))});
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
+ drawFX(cx,cy);
  const z=P.x<240?1:P.x<496?2:3;if(lastZ&&z!==lastZ&&mode==='map')toast(`— ${ZN[z]} —`,1800,'zone');lastZ=z;
  const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${mcount()}/3 medallas · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt}
 function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
@@ -189,7 +193,7 @@ function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya 
  window.HackemonMusic.setScene('encounter',r.id);
  toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
 function encSfx(kind,k){const s=window.HackemonMusic.sfx;if(k===1||(kind==='open'&&k===30))s.throw();if(kind!=='capture')return;
- if(k===45)s.absorb();else if(k===70||k===84||k===96)s.bounce();else if(k>=105&&k<195&&(k-105)%30===0)s.wobble();else if(k===195)s.caught()}
+ if(k===45)s.absorb();else if(k===70||k===84||k===96)s.bounce();else if(k>=105&&k<195&&(k-105)%30===0)s.wobble();else if(k===195){s.caught();burst(170,104,ZC[A.r.zona],30)}}
 function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.zona];
  g.fillStyle='#bfe3ff';g.fillRect(0,0,240,160);g.fillStyle='#d8f0ff';g.fillRect(0,40,240,20);g.fillStyle='#78c850';g.fillRect(0,92,240,68);g.fillStyle='#68b840';g.fillRect(0,92,240,3);
  g.fillStyle='#5aa83a';[[170,102,52,9],[52,150,56,8]].forEach(([x,y,a,b])=>{g.beginPath();g.ellipse(x,y,a,b,0,0,7);g.fill()});
@@ -204,7 +208,7 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<70){const p=(k-45)/25;if(p<1)g.drawImage(tint(r,'#ff5050'),cx-30*(1-p),cy-30*(1-p)+8,60*(1-p),60*(1-p));ball(cx,cy,6+3*Math.sin(p*3),0,zc)}
   else if(k<105){const p=(k-70)/35;const y=p<.4?cy+(gy-cy)*(p/.4)**2:gy-Math.abs(Math.sin((p-.4)/.6*Math.PI*2))*10*(1-(p-.4)/.6);ball(cx,y,6,0,zc)}
   else if(k<195){const ph=(k-105)%30;ball(cx,gy,6,ph<20?Math.sin(ph/20*Math.PI*2)*.5:0,zc)}
-  else if(k<235){ball(cx,gy,6,0,zc);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
+  else if(k<235){ball(cx,gy,6,0,zc);drawFX(0,0);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
 function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
 function openInv(){mode='inv';const v=$('#inv');v.innerHTML=`<h2>Inventario · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small><p><b>Puntuación: ${score()} pts</b></p><div class=medals>${[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}"><img src="${medalImg(z).toDataURL()}"><small>${(S.medals||{})[z]?MED[z]:'???'}</small></div>`).join('')}</div><div class=grid>`+R.map(r=>{const got=S.cap[r.id];
