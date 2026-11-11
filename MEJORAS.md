@@ -34,6 +34,7 @@ Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 | P2-5 | Árboles y flores con mejor pixel art (sombra, tronco, tallo, pétalos) | `f195181` | `game.js` |
 | P2-6 | Peces saltando en las tiles de agua | `57bc03a` | `game.js` |
 | P2-7 | NPC pescador junto al río de Z2 — bloquea paso, habla con tips + humor | `6620251` | `game.js` |
+| P2-8 | Fondos de captura por zona: Z1 jardín · Z2 bosque tecnificado con paquetes de luz · Z3 desierto con dunas | `0e3b6e3` | `game.js` |
 
 ### Diálogos del pescador (`FISH_LINES`, game.js) — contenido nuevo, no original
 
@@ -41,25 +42,6 @@ Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 - *Humor*: "recuerdo cuando solía programar y hackear redes" · "usando el cerebro y no solo la IA" · "peces sin ping" · "récord de 40 años"
 
 # Parte 2 — pendiente de aprobación
-
-## P2-8 ⏳ · Fondos de combate/captura por temática de zona
-
-Hoy la escena de captura (`enc()`) pinta siempre el mismo fondo: cielo
-`#bfe3ff`, colinas y pasto genérico. Propuesta: que el escenario de
-captura/batalla cambie según la zona del reto, igual que las barras de
-transición ya usan `ZC[r.zona]`:
-
-- **Z1 "Ruta Césped"** (jardín): cielo azul claro, pasto verde, flores y
-  quizá una cerca/seto de fondo — el look actual pero "de jardín".
-- **Z2 "Bosque de Redes"** (propio estilo): ambiente de bosque tecnificado —
-  cielo anochecido, siluetas de árboles/cables, paquetes de luz pasando por
-  las líneas, tonos `#2f9fb0` (color de zona).
-- **Z3 "Cumbre Root"** (desierto): cielo cálido/atardecer, dunas de arena,
-  rocas — tonos `#d0703c`.
-
-Implementación prevista: función `fondoEnc(zona)` en `game.js` que pinte el
-fondo de `enc()` según `r.zona`; la animación de cápsula/criatura/partículas
-queda igual encima. Solo `game.js`.
 
 ## Ideas propuestas (aún sin aprobar)
 
