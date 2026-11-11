@@ -204,7 +204,7 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
   if(Math.abs(p.x-Math.round(P.x/16))+Math.abs(p.y-Math.round(P.y/16))<=2){g.fillStyle='#fff';g.font='bold 9px monospace';g.fillText('!',p.x*16-cx+6,p.y*16-cy-8+Math.sin(tm/8)*1.5)}});
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
  drawFX(cx,cy);
- const z=P.x<240?1:P.x<496?2:3;if(lastZ&&z!==lastZ&&mode==='map')toast(`— ${ZN[z]} —`,1800,'zone');lastZ=z;
+ const z=P.x<240?1:P.x<496?2:3;if(lastZ&&z!==lastZ&&mode==='map')toast(`— ${ZN[z]} —`,1800,'zone');lastZ=z;window.HackemonMusic.setZone&&window.HackemonMusic.setZone(z);
  const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${mcount()}/3 medallas · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt;
  drawMini()}
 const FISH_LINES=[
