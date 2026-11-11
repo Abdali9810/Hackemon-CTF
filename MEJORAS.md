@@ -50,6 +50,9 @@ cherry-pick. Cuando una mejora depende de otra, se indica en las notas.
 | P2-17 | Selección de entrenador adaptable con habilidades visibles, gorra/moño personalizables, criaturas y ondas interactivas, botones diferenciados y vistas previas centradas | local | `index.html` + `game.js` + `game.css` |
 | P2-18 | Texto único “Escribe la bandera” en las entradas de respuesta de los 12 retos | local | `game.js` |
 | P2-19 | Mostrar en modo administrador la bandera sin el envoltorio `CORPX{}` cuando aplique | local | `game.js` |
+| P2-20 | Mejoras de selección: efectos sobre el marco exterior, panel translúcido, iconos de accesorios y tres entrenadores con atuendos y compañeros distintivos | local | `index.html` + `game.js` + `game.css` |
+| P2-21 | Ajuste compacto de la selección para que todos los controles quepan sin scroll en ventanas bajas, estrechas y móviles | local | `game.css` |
+| P2-22 | Cambios de color visibles en la ropa y reducción del ruido de ambiente y pasos en las zonas 2 y 3 | local | `game.js` + `game-audio.js` |
 
 Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/npcTalk); para cherry-pick conviene tomar ambos.
 

@@ -51,11 +51,11 @@
   let step = 0;
   let enabled = false;
   let scene = 'menu';
-  let zone = 1, zoneHum = null;
+  let zone = 1;
   let menuIndex = 0;
   let track = menuTracks[menuIndex];
-  let ambient = null;
-  let birdTimer;
+  let ambient = false;
+  let birdTimer = null;
 
   const midi = (n) => 440 * 2 ** ((n - 69) / 12);
 
@@ -205,7 +205,7 @@
     return enabled;
   }
 
-  // ---- Ambiente: viento suave y pájaros mientras se explora el mapa ----
+  // ---- Ambiente: pájaros suaves solo en la primera zona ----
   function chirp() {
     if (!ready() || !ambient) return;
     const t = context.currentTime;
@@ -230,60 +230,24 @@
 
   function scheduleBird() {
     window.clearTimeout(birdTimer);
-    birdTimer = window.setTimeout(() => { chirp(); if (ambient) scheduleBird(); }, 3000 + Math.random() * 6000);
+    birdTimer = window.setTimeout(() => {
+      birdTimer = null;
+      chirp();
+      if (ambient) scheduleBird();
+    }, 3000 + Math.random() * 6000);
   }
 
   function updateAmbient() {
-    if (!ready()) return;
-    const want = scene === 'world';
-    const fq = zone === 3 ? 55 : zone === 2 ? 330 : 0;
-    if (want && fq && !zoneHum) {
-      const o = context.createOscillator(), gn = context.createGain();
-      o.type = zone === 3 ? 'sawtooth' : 'sine';
-      o.frequency.value = fq;
-      gn.gain.value = 0.0001;
-      gn.gain.setTargetAtTime(zone === 3 ? 0.04 : 0.015, context.currentTime, 1);
-      o.connect(gn); gn.connect(sfxBus); o.start();
-      zoneHum = { o, gn };
-    } else if (zoneHum && (!want || !fq)) {
-      zoneHum.gn.gain.setTargetAtTime(0.0001, context.currentTime, 0.3);
-      zoneHum.o.stop(context.currentTime + 1);
-      zoneHum = null;
-    } else if (zoneHum && fq) {
-      zoneHum.o.frequency.setTargetAtTime(fq, context.currentTime, 0.5);
-    }
-    if (want && !ambient) {
-      const source = context.createBufferSource();
-      const filter = context.createBiquadFilter();
-      const gain = context.createGain();
-      source.buffer = noiseBuffer;
-      source.loop = true;
-      filter.type = 'lowpass';
-      filter.frequency.value = 420;
-      gain.gain.setValueAtTime(0.0001, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.05, context.currentTime + 1.5);
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(sfxBus);
-      source.start();
-      // El viento sube y baja lentamente.
-      const lfo = context.createOscillator();
-      const lfoGain = context.createGain();
-      lfo.frequency.value = 0.07;
-      lfoGain.gain.value = 180;
-      lfo.connect(lfoGain);
-      lfoGain.connect(filter.frequency);
-      lfo.start();
-      ambient = { source, gain, lfo };
-      scheduleBird();
-    } else if (!want && ambient) {
-      const { source, gain, lfo } = ambient;
-      ambient = null;
+    const wantBirds = scene === 'world' && zone === 1;
+    if (!wantBirds) {
+      ambient = false;
       window.clearTimeout(birdTimer);
-      gain.gain.setTargetAtTime(0.0001, context.currentTime, 0.3);
-      source.stop(context.currentTime + 1.5);
-      lfo.stop(context.currentTime + 1.5);
+      birdTimer = null;
+      return;
     }
+
+    ambient = true;
+    if (ready() && birdTimer === null) scheduleBird();
   }
 
   // ---- Efectos ----
@@ -295,14 +259,14 @@
       stepAlt = !stepAlt;
       const shift = stepAlt ? 1 : 0.85;
       if (surface === 'wood') {
-        playNoise(t, 0.07, 0.35, 'bandpass', 900 * shift, 4);
-        playNote(180 * shift, t, 0.06, 'triangle', 0.12, sfxBus);
+        playNoise(t, 0.07, 0.1, 'bandpass', 900 * shift, 4);
+        playNote(180 * shift, t, 0.06, 'triangle', 0.06, sfxBus);
       } else if (surface === 'stone') {
-        playNoise(t, 0.05, 0.3, 'bandpass', 2600 * shift, 2.5);
+        playNoise(t, 0.05, 0.08, 'bandpass', 2600 * shift, 2.5);
       } else if (surface === 'dirt') {
-        playNoise(t, 0.08, 0.28, 'lowpass', 1100 * shift);
+        playNoise(t, 0.08, 0.08, 'lowpass', 1100 * shift);
       } else {
-        playNoise(t, 0.09, 0.22, 'highpass', 2400 * shift);
+        playNoise(t, 0.09, 0.07, 'highpass', 2400 * shift);
       }
     },
     throw() {
