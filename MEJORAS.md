@@ -50,6 +50,50 @@ Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/
 - **Niña detective Z1** (`GIRL_LINES`): metadatos/Comment PNG, exiftool/strings, recon pasivo, "cada píxel es una pista"
 - **Hacker retirado Z3** (`HACKER_LINES`): enumerar antes de atacar, comilla SQLi `admin'--`, port knocking, cabeceras, "root con paciencia"
 
+# Parte 3 — plan: completar los retos faltantes (retos.md)
+
+El diseño original (`retos.md`) define **16 retos en 4 gimnasios**; el juego
+tiene **12 en 3 zonas**. Análisis de qué falta y cómo adaptarlo manteniendo la
+coherencia (mismo formato `r()`, pistas progresivas con costo, ética,
+artefactos descargables, servicios locales).
+
+## Estado por reto del diseño original
+
+| retos.md | Estado en el juego | Propuesta |
+|----------|--------------------|-----------|
+| R01 FOCA metadatos | ✅ = reto 1 | — |
+| R02 IPv6 nslookup | ✅ = reto 2 | — |
+| R03 DNSDumpster/IANA | ❌ **PDF ya en repo, sin reto** | Reto nuevo Z1: descargar `informe_recon_iana_oculto.pdf`, analizar con FOCA/exiftool → respuesta `220 IANA FTP Server` (flag `CORPX{220_iana_ftp_server}`). **Solo cablea lo que ya existe.** |
+| R04 curl FTP banner | ❌ | Servicio TCP falso en puerto local (helper `tcp()` ya existe): `curl 127.0.0.1:PORT` → banner `220 CorpX FTP` con flag. Z3. |
+| R05 nmap -sn | ❌ | Artefacto: `nmap_sn.txt` (salida simulada) → identificar la IP objetivo. Z2, coherente con retos de análisis. |
+| R06 nmap -sS -sV | ❌ | Igual: `nmap_sv.txt` simulado → puerto+versión de Apache. Z2. |
+| R07 SMB NSE | ❌ | Artefacto `smb_os_discovery.txt` → dominio/shares. Z2. |
+| R08 SNMP 161 | ❌ | Artefacto `snmp_users.txt` → usuarios enumerados. Z2. |
+| R09 pcap HTTP | ✅ ≈ reto 5 | — |
+| R10 nmap vuln XML | ❌ | Artefacto `vuln_report.xml` (salida -oX) → hallar CVE/flag. Z3. |
+| R11 backdoor.php | ❌ | Endpoint `/backdoor.php?cmd=` en 8081: shell simulada — solo responde a `cat reporte-notas.txt` (o similar) devolviendo la flag. Z3. |
+| R12 netcat shell | ❌ | Servicio `tcp()` que al conectar y enviar el comando correcto devuelve flag — simula la reverse shell. Z3. |
+| R13 SQLi POST | ✅ = reto 10 | — |
+| R14 SQLi UNION GET | ❌ | Endpoint `/buscar?q=` en 8081 vulnerable a UNION: `1 UNION SELECT ...` devuelve la flag. Z3. |
+| R15 SQLi blind | ❌ | Endpoint `/perfil?id=` boolean-blind en 8081: `?id=1 AND 1=1` vs `AND 1=2` cambian la página → inferir flag carácter a carácter (o respuesta simplificada para nivel intro). Z3. |
+| R16 file upload webshell | ❌ | Endpoint `/subir` en 8081 que valida extensión/MIME de forma bypasseable → al "ejecutar" el archivo subido muestra flag. Z3. |
+
+## Fases propuestas (cada item = commit independiente)
+
+- **Fase A — sin tocar el mapa** (encajan en zonas actuales, cada uno es un
+  commit): R03-PDF (cablear artefacto existente), R11 backdoor.php,
+  R14 UNION, R15 blind, R16 upload, R04 banner TCP, R12 shell TCP.
+- **Fase B — artefactos de análisis** (patrón ya usado en retos 5-9):
+  R05-R08 y R10 como salidas de herramientas simuladas generadas en
+  `artefactos.py`.
+- **Fase C — opcional, 4ª zona/gimnasio** (si se quieren 16 retos reales):
+  W 48→64 tiles, 3er río+guardia en x=47, `ZN[4]/ZC[4]`, 4ª medalla, HUD
+  "N/4". Toca constantes hardcodeadas (ríos 15-16/31-32, cortes 240/496).
+
+Fuera de alcance del lab local (se documentan, no se implementan):
+escaneos nmap reales a otra máquina, DNSDumpster/Shodan reales, Mutillidae
+y DVWA (existen alternativas simuladas arriba).
+
 ## Verificación
 
 `static/` va por volumen → `Ctrl+F5`. Solo M2 pide rebuild
