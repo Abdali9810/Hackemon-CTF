@@ -113,7 +113,8 @@ function tile(v,x,y,tx,ty){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+
  if(v===7){const c=hs(tx,ty)%2?'#f85878':'#c868f8';f('#2f8f3f',7+sw,8,1,7);f('#2f8f3f',5+sw,11,2,1);f(c,5+sw,4,5,1);f(c,7+sw,2,1,5);f('#f8d030',7+sw,4,1,1)}
  if(v===2){f('#1e421e',1,9,14,5);f('#2f6f2f',2,2,12,8);f('#1e421e',1,4,1,5);f('#1e421e',14,4,1,5);f('#3d8b3d',4+sw,1,7,3);f('#4da04d',3+sw,5,2,2);f('#4da04d',10+sw,6,2,2);f('#5a3a20',6,11,4,5);f('#7a5a35',7,11,2,4);f('#58b848',0,14,16,2)}
  if(v===6){f('#4a4a52',1,10,14,4);f('#6b6b73',1,3,14,8);f('#8a8a94',3,4,6,3)}
- if(v===3){f('#3890f8',0,0,16,16);const o=(Math.floor(tm/12)+tx*3)%8;f('#88c8ff',o,5,4,1);f('#88c8ff',(o+6)%12,11,3,1)}
+ if(v===3){f('#3890f8',0,0,16,16);const o=(Math.floor(tm/12)+tx*3)%8;f('#88c8ff',o,5,4,1);f('#88c8ff',(o+6)%12,11,3,1);
+  const ph=(Math.floor(tm/5)+hs(tx,ty)*3)%90;if(ph<10){const fy=Math.round(Math.sin(ph/10*Math.PI)*6);f('#e8f0e0',7,9-fy,3,2);f('#10161a',9,9-fy,1,1);if(fy<3)f('#bfe8ff',5,12,7,1)}}
  if(v===4){if([15,16,31,32].includes(tx)){f('#a8783c',0,0,16,16);f('#7a5428',0,5,16,1);f('#7a5428',0,11,16,1)}else{f('#d8c090',0,0,16,16);f('#c8b080',3,3,2,2);f('#e8d0a0',10,9,2,2)}}}
 function ball(x,y,r,rot,col){g.save();g.translate(x,y);g.rotate(rot);g.fillStyle=col||'#2f9fb0';g.beginPath();g.arc(0,0,r,Math.PI,0);g.fill();
  g.fillStyle='#f8f8f8';g.beginPath();g.arc(0,0,r,0,Math.PI);g.fill();g.fillStyle='#222';g.fillRect(-r,-1,2*r,2);
