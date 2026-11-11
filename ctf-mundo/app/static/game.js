@@ -163,11 +163,13 @@ function drawTile(value, x, y, tileX, tileY) {
     g.fillRect(x + offsetX, y + offsetY, width, height);
   };
 
+  const aut = tileX >= 17 && tileX <= 30;
+
   if ([0, 1, 2, 7].includes(value)) {
-    fill('#58b848', 0, 0, 16, 16);
+    fill(aut ? '#c8882a' : '#58b848', 0, 0, 16, 16);
     if ((tileX * 3 + tileY) % 4 === 0) {
-      fill('#68c858', 3, 4, 2, 2);
-      fill('#48a038', 11, 10, 2, 1);
+      fill(aut ? '#d8a040' : '#68c858', 3, 4, 2, 2);
+      fill(aut ? '#a06820' : '#48a038', 11, 10, 2, 1);
     }
   }
 
@@ -180,25 +182,25 @@ function drawTile(value, x, y, tileX, tileY) {
   }
 
   if (value === 1) {
-    fill('#3c9a3c', 2, 6, 2, 6);
-    fill('#3c9a3c', 7, 4, 2, 8);
-    fill('#3c9a3c', 12, 7, 2, 5);
-    fill('#78d868', 3, 6, 1, 3);
-    fill('#78d868', 8, 4, 1, 3);
+    fill(aut ? '#b04020' : '#3c9a3c', 2, 6, 2, 6);
+    fill(aut ? '#b04020' : '#3c9a3c', 7, 4, 2, 8);
+    fill(aut ? '#b04020' : '#3c9a3c', 12, 7, 2, 5);
+    fill(aut ? '#f0a030' : '#78d868', 3, 6, 1, 3);
+    fill(aut ? '#f0a030' : '#78d868', 8, 4, 1, 3);
   }
 
   if (value === 7) {
-    fill('#f8f8f8', 5, 5, 2, 2);
-    fill('#f8d030', 6, 6, 1, 1);
-    fill('#f85878', 10, 10, 2, 2);
+    fill(aut ? '#f8c038' : '#f8f8f8', 5, 5, 2, 2);
+    fill(aut ? '#e84828' : '#f8d030', 6, 6, 1, 1);
+    fill(aut ? '#c84020' : '#f85878', 10, 10, 2, 2);
   }
 
   if (value === 2) {
-    fill('#245824', 1, 8, 14, 6);
-    fill('#2f6f2f', 1, 1, 14, 10);
-    fill('#3d8b3d', 3, 0, 10, 4);
+    fill(aut ? '#8a3818' : '#245824', 1, 8, 14, 6);
+    fill(aut ? '#c04820' : '#2f6f2f', 1, 1, 14, 10);
+    fill(aut ? '#d86028' : '#3d8b3d', 3, 0, 10, 4);
     fill('#6b4a2a', 6, 12, 4, 4);
-    fill('#58b848', 0, 14, 16, 2);
+    fill(aut ? '#c8882a' : '#58b848', 0, 14, 16, 2);
   }
 
   if (value === 6) {
@@ -244,6 +246,25 @@ function drawMap() {
     const captured = saveData.cap[challenge.id];
     g.fillStyle = '#555';
     g.fillRect(x + 3, y + 11, 10, 4);
+
+    // Cartel de madera con número del reto
+    g.fillStyle = '#6b4a2a';
+    g.fillRect(x + 22, y + 8, 2, 7);
+    g.fillStyle = '#3a2010';
+    g.fillRect(x + 16, y, 14, 8);
+    g.fillStyle = captured ? '#887040' : '#c09040';
+    g.fillRect(x + 17, y + 1, 12, 6);
+    g.fillStyle = captured ? '#998050' : '#d4a850';
+    g.fillRect(x + 17, y + 2, 12, 1);
+    g.font = 'bold 7px monospace';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillStyle = '#1a0a02';
+    g.fillText(String(challenge.id), x + 24, y + 5);
+    g.fillStyle = '#fffaf0';
+    g.fillText(String(challenge.id), x + 23, y + 4);
+    g.textAlign = 'left';
+    g.textBaseline = 'alphabetic';
 
     if (!captured) {
       g.globalAlpha = .25 + .2 * Math.sin(frame / 10 + challenge.id);
