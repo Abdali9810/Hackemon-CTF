@@ -231,9 +231,23 @@ function interact(){const r=near();
  toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
 function encSfx(kind,k){const s=window.HackemonMusic.sfx;if(k===1||(kind==='open'&&k===30))s.throw();if(kind!=='capture')return;
  if(k===45)s.absorb();else if(k===70||k===84||k===96)s.bounce();else if(k>=105&&k<195&&(k-105)%30===0)s.wobble();else if(k===195){s.caught();burst(170,104,ZC[A.r.zona],30)}}
+function fondoEnc(z){const R2=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(a,b,w,h)};
+ if(z===2){R2('#0d2430',0,0,240,160);R2('#123c44',0,56,240,36);
+  g.fillStyle='#0a1c22';[[18,70],[60,64],[120,68],[190,66],[226,72]].forEach(([x,y])=>{g.beginPath();g.moveTo(x-14,y+26);g.lineTo(x,y-14);g.lineTo(x+14,y+26);g.fill()});
+  g.strokeStyle='#215a68';g.lineWidth=1;[28,44].forEach(y=>{g.beginPath();g.moveTo(0,y);g.lineTo(240,y-6);g.stroke()});
+  [0,1].forEach(i=>{const x=(tm*1.5+i*120)%240;g.fillStyle='#75d9e8';g.fillRect(x,26-6*(x/240)+i*16,3,3)});
+  R2('#1d4a44',0,92,240,68);R2('#2f9fb0',0,92,240,3);R2('#173b36',0,140,240,20)}
+ else if(z===3){R2('#f8c878',0,0,240,160);R2('#f09850',0,60,240,32);
+  g.fillStyle='#f8e0a0';g.beginPath();g.arc(190,26,14,0,7);g.fill();
+  g.fillStyle='#d8a850';[[-40,104],[90,96],[200,106]].forEach(([x,y])=>{g.beginPath();g.ellipse(x,y,85,30,0,Math.PI,0);g.fill()});
+  R2('#c89848',0,116,240,44);R2('#b8853c',0,140,240,20);
+  g.fillStyle='#8a6a4a';g.fillRect(28,128,10,6);g.fillRect(30,126,6,3);g.fillRect(206,144,12,7);g.fillRect(209,141,7,3)}
+ else{R2('#bfe3ff',0,0,240,160);R2('#d8f0ff',0,40,240,20);R2('#78c850',0,92,240,68);R2('#68b840',0,92,240,3);
+  g.fillStyle='#3f8f3f';for(let x=0;x<240;x+=16){g.beginPath();g.arc(x+8,90,9,Math.PI,0);g.fill()}
+  g.fillStyle='#5aa83a';[[170,102,52,9],[52,150,56,8]].forEach(([x,y,a,b])=>{g.beginPath();g.ellipse(x,y,a,b,0,0,7);g.fill()});
+  [[30,124,'#f85878'],[62,144,'#c868f8'],[132,130,'#f85878'],[204,136,'#f8d030'],[92,150,'#c868f8'],[216,150,'#f85878']].forEach(([x,y,c])=>{g.fillStyle=c;g.fillRect(x,y,3,3);g.fillStyle='#f8d030';g.fillRect(x+1,y+1,1,1)})}}
 function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.zona];
- g.fillStyle='#bfe3ff';g.fillRect(0,0,240,160);g.fillStyle='#d8f0ff';g.fillRect(0,40,240,20);g.fillStyle='#78c850';g.fillRect(0,92,240,68);g.fillStyle='#68b840';g.fillRect(0,92,240,3);
- g.fillStyle='#5aa83a';[[170,102,52,9],[52,150,56,8]].forEach(([x,y,a,b])=>{g.beginPath();g.ellipse(x,y,a,b,0,0,7);g.fill()});
+ fondoEnc(r.zona);
  const cr=(sc,img)=>g.drawImage(img,cx-30*sc,cy-30*sc+8,60*sc,60*sc),arc=p=>[bx+(cx-bx)*p,by+(cy-by)*p-48*Math.sin(Math.PI*p)];
  if(kind==='open'){
   if(k<30){const w=Math.min(240,240*(k/24));for(let i=0;i<10;i++){g.fillStyle=i%2?zc:'#10161a';g.fillRect(i%2?240-w:0,i*16,w,16)}}
