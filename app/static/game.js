@@ -162,15 +162,18 @@ function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya 
  $('#menu-toggle').style.display='none';
  window.HackemonMusic.setScene('encounter',r.id);
  toast('¡Un reto salvaje apareció! Lanzando cápsula…');A={kind:'open',r,k:0,done:()=>openPanel(r)};mode='enc'}
-function encSfx(kind,k){const s=window.HackemonMusic.sfx;if(k===1)s.throw();if(kind!=='capture')return;
+function encSfx(kind,k){const s=window.HackemonMusic.sfx;if(k===1||(kind==='open'&&k===30))s.throw();if(kind!=='capture')return;
  if(k===45)s.absorb();else if(k===70||k===84||k===96)s.bounce();else if(k>=105&&k<195&&(k-105)%30===0)s.wobble();else if(k===195)s.caught()}
 function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,bx=30,by=140,zc=ZC[r.zona];
  g.fillStyle='#bfe3ff';g.fillRect(0,0,240,160);g.fillStyle='#d8f0ff';g.fillRect(0,40,240,20);g.fillStyle='#78c850';g.fillRect(0,92,240,68);g.fillStyle='#68b840';g.fillRect(0,92,240,3);
  g.fillStyle='#5aa83a';[[170,102,52,9],[52,150,56,8]].forEach(([x,y,a,b])=>{g.beginPath();g.ellipse(x,y,a,b,0,0,7);g.fill()});
  const cr=(sc,img)=>g.drawImage(img,cx-30*sc,cy-30*sc+8,60*sc,60*sc),arc=p=>[bx+(cx-bx)*p,by+(cy-by)*p-48*Math.sin(Math.PI*p)];
- if(kind==='open'){cr(1,sil(r));if(k<50){const[x,y]=arc(k/50);ball(x,y,6,k/3,zc)}
-  else if(k<85){const p=(k-50)/35;g.globalAlpha=1-p;g.fillStyle='#fff';g.fillRect(0,0,240,160);g.globalAlpha=1}
-  else{A.done();A=null;return}}
+ if(kind==='open'){
+  if(k<30){const w=Math.min(240,240*(k/24));for(let i=0;i<10;i++){g.fillStyle=i%2?zc:'#10161a';g.fillRect(i%2?240-w:0,i*16,w,16)}}
+  else{cr(1,sil(r));const kk=k-30;
+   if(kk<50){const[x,y]=arc(kk/50);ball(x,y,6,kk/3,zc)}
+   else if(kk<85){const p=(kk-50)/35;g.globalAlpha=1-p;g.fillStyle='#fff';g.fillRect(0,0,240,160);g.globalAlpha=1}
+   else{A.done();A=null;return}}}
  else{ if(k<45){cr(1,mk(r));const[x,y]=arc(k/45);ball(x,y,6,k/3,zc)}
   else if(k<70){const p=(k-45)/25;if(p<1)g.drawImage(tint(r,'#ff5050'),cx-30*(1-p),cy-30*(1-p)+8,60*(1-p),60*(1-p));ball(cx,cy,6+3*Math.sin(p*3),0,zc)}
   else if(k<105){const p=(k-70)/35;const y=p<.4?cy+(gy-cy)*(p/.4)**2:gy-Math.abs(Math.sin((p-.4)/.6*Math.PI*2))*10*(1-(p-.4)/.6);ball(cx,y,6,0,zc)}
