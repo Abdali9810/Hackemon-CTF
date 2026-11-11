@@ -35,22 +35,19 @@ Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 | P2-6 | Peces saltando en las tiles de agua | `57bc03a` | `game.js` |
 | P2-7 | NPC pescador junto al río de Z2 — bloquea paso, habla con tips + humor | `6620251` | `game.js` |
 | P2-8 | Fondos de captura por zona: Z1 jardín · Z2 bosque tecnificado con paquetes de luz · Z3 desierto con dunas | `0e3b6e3` | `game.js` |
+| P2-9 | NPCs por zona (sistema genérico `NPCS`): niña detective Z1 + hacker retirado Z3 + pescador Z2 | `75e4dd4` | `game.js` |
+| P2-10 | Sello "Purista" por zona completada sin pistas (estrella en inventario + toast) | `95c5a33` | `game.js` + `game.css` |
+| P2-11 | Ambiente sonoro por zona: zumbido grave Z3, brillo Z2 (`setZone` en HackemonMusic) | `958b460` | `game.js` + `game-audio.js` |
+| P2-12 | Ciclo suave de iluminación día/noche sobre el mapa | `b817cd0` | `game.js` |
+| P2-13 | Z1 renombrada "Ruta Césped" → "Pradera Recon" | `4b4869f` | `game.js` + `index.html` |
 
-### Diálogos del pescador (`FISH_LINES`, game.js) — contenido nuevo, no original
+Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/npcTalk); para cherry-pick conviene tomar ambos.
 
-- *Tips*: guardias/zonas · controles (Espacio, I, M, N) · costo de pistas (15 pts) · botón de descarga
-- *Humor*: "recuerdo cuando solía programar y hackear redes" · "usando el cerebro y no solo la IA" · "peces sin ping" · "récord de 40 años"
+### Diálogos de NPCs (game.js) — contenido nuevo, no original
 
-# Parte 2 — pendiente de aprobación
-
-## Ideas propuestas (aún sin aprobar)
-
-- NPCs temáticos en Z1 (niña con lupa — tips OSINT) y Z3 (hacker — tips web).
-- Medalla extra "Purista": zona completada sin usar pistas.
-- Ambiente sonoro por zona en `updateAmbient` (viento Z1, zumbido Z3).
-- Ciclo de iluminación suave (día/noche leve) sobre el mapa.
-- Renombrar Z1 "Ruta Césped" → "Pradera Recon"/"Ruta OSINT" (su contenido es
-  recon básico; "Bosque de Redes" y "Cumbre Root" sí casan con sus retos).
+- **Pescador Z2** (`FISH_LINES`): tips de guardias/controles/pistas/descargas + humor ("hackear redes", "IA jaja", "peces sin ping", "40 años")
+- **Niña detective Z1** (`GIRL_LINES`): metadatos/Comment PNG, exiftool/strings, recon pasivo, "cada píxel es una pista"
+- **Hacker retirado Z3** (`HACKER_LINES`): enumerar antes de atacar, comilla SQLi `admin'--`, port knocking, cabeceras, "root con paciencia"
 
 ## Verificación
 
