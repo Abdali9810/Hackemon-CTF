@@ -240,12 +240,12 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
  if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
  if(k==='m'){if(mode==='menu')closeMenu();else openMenu();return}keys[k]=1;
- if(mode==='map'){if([' ','enter'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k.startsWith('arrow'))e.preventDefault()}
+ if(mode==='map'){if([' ','enter'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k==='n'){S.mini=S.mini===false;persist()}else if(k.startsWith('arrow'))e.preventDefault()}
  else if(mode==='inv'&&k==='i')closeAll()});
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=$('#mini').hidden=['start','login','enc','capture-result'].includes(mode);if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
