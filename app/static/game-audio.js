@@ -325,10 +325,15 @@
       const t = context.currentTime;
       playNoise(t, 0.04, 0.5, 'bandpass', 3000, 8);
       playNote(1200, t, 0.05, 'square', 0.08, sfxBus);
-      [72, 76, 79, 84, 79, 84].forEach((n, i) => {
-        const s = t + 0.25 + i * 0.12 + (i >= 4 ? 0.06 : 0);
-        playNote(midi(n), s, i === 5 ? 0.6 : 0.11, 'square', 0.1, sfxBus);
-        playNote(midi(n - 12), s, i === 5 ? 0.6 : 0.11, 'triangle', 0.12, sfxBus);
+      const jingle = [
+        [72, 0, 1], [76, 1, 1], [79, 2, 1], [84, 3, 3],
+        [81, 6, 1], [79, 7, 1], [81, 8, 1], [84, 9, 3],
+        [77, 12, 1], [76, 13, 1], [74, 14, 1], [72, 15, 7]
+      ];
+      jingle.forEach(([n, i, d]) => {
+        const s = t + 0.25 + i * 0.11;
+        playNote(midi(n), s, d * 0.11, 'square', 0.1, sfxBus);
+        playNote(midi(n - 12), s, d * 0.11, 'triangle', 0.12, sfxBus);
       });
     }
   };
