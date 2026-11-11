@@ -21,7 +21,8 @@ def validar():
     while q and now - q[0] > 60: q.popleft()
     if len(q) >= 8: return jsonify(ok=False, error="limite"), 429
     q.append(now); d = request.get_json(silent=True) or {}; f = F.get(d.get("id"))
-    return jsonify(ok=bool(f) and hmac.compare_digest(str(d.get("flag", "")).strip().encode(), f.encode()))
+    submitted = str(d.get("flag", "")).strip().lower()
+    return jsonify(ok=bool(f) and hmac.compare_digest(submitted.encode(), f.lower().encode()))
 ADMIN_TR_USER = "Admin-TR"
 ADMIN_TR_PASS = os.environ.get("ADMIN_TR_PASS") or "ContraseñaTR"
 admin_tries = defaultdict(deque)
