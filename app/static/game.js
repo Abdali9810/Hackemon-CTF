@@ -76,6 +76,7 @@ async function submitLogin(e){e.preventDefault();const name=$('#login-name').val
  PLAYER=name;try{localStorage.setItem('ctfm1-name',name)}catch(x){}
  $('#login').style.display='none';startGame()}
 function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='none';window.HackemonMusic.setScene('world');
+ if(!S.t0)S.t0=Date.now();persist();
  window.HackemonMusic.start().then(()=>updateMusicButton(true)).catch(e=>{console.error('No se pudo iniciar la música.',e);toast('No se pudo iniciar la música en este navegador.',4000)});
  const lines=[`¡Hola! Me llamo ${PLAYER}.`,
   'Dicen que este mundo es una aventura llena de retos, criaturas digitales y guardias con muy poca paciencia.',
@@ -85,7 +86,10 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
 function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');
  if(pendingMedal){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[pendingMedal],40);toast(`¡${MED[pendingMedal]} conseguida! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
- else toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null}
+ else toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null;
+ if(total()===12){const hh=Object.values(S.hints||{}).reduce((a,b)=>a+b,0),s=Math.floor((Date.now()-(S.t0||Date.now()))/1000);
+  $('#liga-stats').innerHTML=`Puntuación: <b>${score()} pts</b> · Medallas: ${mcount()}/3 · Pistas usadas: ${hh} · Tiempo: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  $('#liga').style.display='grid';mode='liga'}}
 function build(){
  for(let y=0;y<H;y++){T[y]=[];for(let x=0;x<W;x++){const n=hs(x,y),z3=x>=33;let v=z3?5:0;
   if(x===0||y===0||x===W-1||y===H-1)v=z3?6:2;else if([15,16,31,32].includes(x))v=3;
@@ -238,6 +242,7 @@ updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
 $('#capture-continue').onclick=continueAfterCapture;
+$('#liga-continue').onclick=()=>{$('#liga').style.display='none';mode='map'};
 $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
 $('#menu-restart').onclick=restartChallenges;
