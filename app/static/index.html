@@ -14,6 +14,7 @@
   <main id="w">
     <canvas id="c" width="240" height="160" aria-label="Mapa del mundo Hackémon"></canvas>
     <div id="hud" hidden aria-live="polite"></div>
+    <canvas id="mini" width="96" height="64" hidden aria-label="Minimapa"></canvas>
     <button id="menu-toggle" type="button" aria-expanded="false">☰ Menú</button>
     <button id="music-toggle" class="off" type="button" aria-pressed="false" aria-expanded="false" aria-controls="sound-panel" aria-label="Sonido" title="Sonido">♫</button>
     <div id="sound-panel" hidden>
@@ -35,11 +36,11 @@
           <h2 id="intro-title">Una aventura entre redes y criaturas</h2>
           <p>Las criaturas digitales protegen secretos y pistas en tres zonas. Explora sus rutas, resuelve desafíos y aprende a cuidar la tecnología usando tus habilidades de forma responsable.</p>
           <div class="chapters" aria-label="Zonas del juego">
-            <div class="chapter"><b>01 · Ruta Césped</b>Observa y explora</div>
+            <div class="chapter"><b>01 · Pradera Recon</b>Observa y explora</div>
             <div class="chapter"><b>02 · Bosque de Redes</b>Sigue las pistas</div>
             <div class="chapter"><b>03 · Cumbre Root</b>Une lo aprendido</div>
           </div>
-          <p class="controls">Flechas / WASD para moverte · Espacio o Enter para abrir una cápsula cercana · I inventario · M menú</p>
+          <p class="controls">Flechas / WASD para moverte · Espacio o Enter para abrir una cápsula cercana · I inventario · M menú · N minimapa</p>
           <p class="flag-format">Cada reto indica el formato de su bandera.</p>
           <button id="choose-screen" type="button" disabled>Preparando el laboratorio…</button>
           <p class="music-note">Música original: cambia en el menú, acompaña la exploración y tiene una melodía para cada reto.</p>
@@ -117,6 +118,16 @@
       </div>
     </section>
 
+    <section id="liga" aria-labelledby="liga-title">
+      <div class="menu-card">
+        <p class="eyebrow">¡Liga completada!</p>
+        <h2 id="liga-title">¡Liga Hackémon completada!</h2>
+        <p>Capturaste a los 12 Hackémon. CorpX te debe una.</p>
+        <p id="liga-stats"></p>
+        <button id="liga-continue" type="button">Seguir explorando</button>
+      </div>
+    </section>
+
     <section id="login" aria-labelledby="login-title">
       <form id="login-form" class="menu-card" autocomplete="off">
         <p class="eyebrow">Registro de entrenador</p>
@@ -144,7 +155,7 @@
     <div id="inv"></div>
   </main>
 
-  <p class="k">Flechas / WASD: moverte · Espacio / Enter: abrir cápsula cercana · I: inventario · M / Esc: menú</p>
+  <p class="k">Flechas / WASD: moverte · Espacio / Enter: abrir cápsula cercana · I: inventario · M / Esc: menú · N: minimapa</p>
 
   <script src="game-audio.js" defer></script>
   <script src="game.js" defer></script>

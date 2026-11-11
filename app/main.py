@@ -39,11 +39,22 @@ def admin_login():
 def desc(n): return send_from_directory(os.path.join(B, "artefactos"), n, as_attachment=True)
 
 obj = Flask("objetivo"); KEY = secrets.token_hex(8); ADMIN = secrets.token_hex(6)
+def page(title, body):
+    return ('<!doctype html><html lang=es><head><meta charset=utf-8>'
+            '<meta name=viewport content="width=device-width,initial-scale=1">'
+            f'<title>{title} · CorpX</title><link rel=stylesheet href="/static/corpx.css"></head><body>'
+            '<header class=top><div class=logo>CX</div><div><small>Intranet corporativa</small>'
+            '<h1>CorpX Intranet</h1></div></header>'
+            f'<main class=card>{body}</main></body></html>')
 @obj.get("/")
 def home():
-    r = make_response('<h1>CorpX Intranet</h1><p>Bienvenido, agente. <a href="/portal">Portal</a></p>')
+    r = make_response(page("Inicio", '<h2>Bienvenido, agente</h2><p>Red interna de CorpX. Acceso al <a href="/portal">portal de empleados</a>.</p>'))
     r.headers["X-Debug-Token"] = F[3]; return r
-FORM = '<h2>Portal CorpX</h2><form method=post>Usuario <input name=u><br>Clave <input name=c type=password><br><button>Entrar</button></form>'
+FORM_BODY = ('<h2>Portal de empleados</h2><form method=post>'
+             '<label>Usuario</label><input name=u autocomplete=off>'
+             '<label>Clave</label><input name=c type=password>'
+             '<button>Entrar</button></form>')
+FORM = page("Portal", FORM_BODY)
 @obj.route("/portal", methods=["GET", "POST"])
 def portal():
     if request.method == "GET": return FORM
@@ -51,11 +62,13 @@ def portal():
     db = sqlite3.connect(":memory:"); db.execute("create table usuarios(u,c,rol)")
     db.executemany("insert into usuarios values(?,?,?)", [("admin", ADMIN, "admin"), ("invitado", "invitado", "user")])
     try: row = db.execute(f"SELECT u,rol FROM usuarios WHERE u='{u}' AND c='{c}'").fetchone()  # vulnerable A PROPOSITO
-    except Exception as e: return FORM + f"<p>Error SQL: {escape(e)}</p>", 500
-    if not row: return FORM + "<p>Credenciales inválidas</p>", 401
-    return f"<p>Hola {escape(row[0])} ({row[1]})</p>" + (f"<p>{F[10]}</p>" if row[1] == "admin" else "")
+    except Exception as e: return page("Portal", FORM_BODY + f'<p class="msg err">Error SQL: {escape(e)}</p>'), 500
+    if not row: return page("Portal", FORM_BODY + '<p class="msg err">Credenciales inválidas</p>'), 401
+    body = f'<p class="msg ok">Hola {escape(row[0])} ({row[1]})</p>'
+    if row[1] == "admin": body += f'<p>Flag recuperada: <span class=flag>{F[10]}</span></p>'
+    return page("Portal", body)
 @obj.get("/backup", strict_slashes=False)
-def bk(): return "Acceso restringido", 403
+def bk(): return page("Backup", '<h2>Acceso restringido</h2><p class="msg err">Este directorio está fuera de tu alcance, agente.</p>'), 403
 @obj.get("/backup/config.bak")
 def cfg(): return f"# respaldo\nDB_HOST=db.corpx.lab\nAPI_KEY={KEY}\n", 200, {"Content-Type": "text/plain"}
 @obj.get("/api/flag")
