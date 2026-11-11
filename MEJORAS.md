@@ -48,6 +48,8 @@ cherry-pick. Cuando una mejora depende de otra, se indica en las notas.
 | P2-15 | Pantalla inicial independiente con título, créditos, criaturas pixeladas que recorren los bordes y ondas interactivas; botón para entrar al menú de historia | local | `index.html` + `game.js` + `game.css` |
 | P2-16 | Historia con efectos de criaturas y ondas, controles en lista visual y tipografía adaptable y legible sin scroll en portátiles | local | `index.html` + `game.js` + `game.css` |
 | P2-17 | Selección de entrenador adaptable con habilidades visibles, gorra/moño personalizables, criaturas y ondas interactivas, botones diferenciados y vistas previas centradas | local | `index.html` + `game.js` + `game.css` |
+| P2-18 | Texto único “Escribe la bandera” en las entradas de respuesta de los 12 retos | local | `game.js` |
+| P2-19 | Mostrar en modo administrador la bandera sin el envoltorio `CORPX{}` cuando aplique | local | `game.js` |
 
 Nota: P2-9 refactoriza el código de P2-7 (fisherPos/fisherTalk → NPCS/npcPos/npcTalk); para cherry-pick conviene tomar ambos.
 
