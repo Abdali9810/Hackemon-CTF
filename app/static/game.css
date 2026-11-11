@@ -28,7 +28,7 @@ canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
 .menu-card button{display:block;width:100%;margin:7px 0;padding:10px}
 #menu-restart{background:#9a4c38}#menu-restart:hover{background:#b35a42}
 #msg{position:absolute;left:2%;right:2%;bottom:3%;background:#f8f8f0;color:#202020;border:3px solid #384050;border-radius:6px;padding:8px 12px;display:none;font-weight:bold}
-#panel,#inv{position:absolute;inset:0;background:rgba(10,20,12,.96);display:none;overflow:auto;padding:16px;box-sizing:border-box}
+#panel,#inv{position:absolute;inset:56px 0 0 0;background:rgba(10,20,12,.96);display:none;overflow:auto;padding:16px;box-sizing:border-box}
 h2{margin:0 0 4px;font-size:18px}small{color:#9db3ab}code{background:#1b2c24;padding:1px 5px;border-radius:4px;color:#ffd866}
 .row{display:flex;gap:14px;align-items:center}.row img,.card img{width:72px;height:72px;image-rendering:pixelated;background:#16241c;border-radius:8px}
 .chip{display:inline-block;background:#24413a;color:#9be8c8;border-radius:10px;padding:1px 10px;margin:0 6px 4px 0;font-size:12px}
