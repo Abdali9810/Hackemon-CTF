@@ -97,7 +97,14 @@ function build(){
  for(let x=1;x<W-1;x++)T[16][x]=4;
  R.forEach(r=>{for(let y=Math.min(r.y,16);y<=Math.max(r.y,16);y++)T[y][r.x]=4;
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=r.x+dx,Y=r.y+dy;if([2,6].includes(T[Y][X]))T[Y][X]=X>=33?5:0}});
- GD.forEach(d=>T[15][d.x-1]=4)}
+ GD.forEach(d=>T[15][d.x-1]=4);buildMini()}
+let MINI=null;
+function buildMini(){MINI=document.createElement('canvas');MINI.width=96;MINI.height=64;const m=MINI.getContext('2d');
+ const C={0:'#4a9a44',1:'#3a7a34',2:'#245824',3:'#3890f8',4:'#d8c090',5:'#a89878',6:'#4a4a52',7:'#58b848'};
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){m.fillStyle=C[T[y][x]]||'#4a9a44';m.fillRect(x*2,y*2,2,2)}}
+function drawMini(){const mn=$('#mini');if(!mn||!MINI)return;const m=mn.getContext('2d');m.drawImage(MINI,0,0);
+ R.forEach(r=>{if(!S.cap[r.id]){m.fillStyle=ZC[r.zona];m.fillRect(r.x*2-1,r.y*2-1,3,3)}});
+ m.fillStyle='#fff';m.fillRect(Math.round(P.x/8)-1,Math.round(P.y/8)-1,3,3)}
 function tile(v,x,y,tx,ty){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
  const sw=Math.round(Math.sin(tm/16+tx*0.8+ty*0.4));
  if([0,1,2,7].includes(v)){f('#58b848',0,0,16,16);if((tx*3+ty)%4===0){f('#68c858',3+sw,4,2,2);f('#48a038',11+sw,10,2,1)}}
@@ -191,7 +198,8 @@ function drawMap(){const cx=Math.max(0,Math.min(W*16-240,P.x+8-120)),cy=Math.max
  spr(P.x-cx,P.y-cy-4,P.dir,P.mv>0?(Math.floor(P.mv/4)%2?1:2):0);
  drawFX(cx,cy);
  const z=P.x<240?1:P.x<496?2:3;if(lastZ&&z!==lastZ&&mode==='map')toast(`— ${ZN[z]} —`,1800,'zone');lastZ=z;
- const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${mcount()}/3 medallas · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt}
+ const h=$('#hud'),txt=`${PLAYER}${ADMIN?' [ADMIN]':''} · ${ZN[z]} · ${total()}/12 · ${mcount()}/3 medallas · ${score()} pts`;if(h.textContent!==txt)h.textContent=txt;
+ drawMini()}
 function interact(){const r=near();if(!r)return;if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
  $('#menu-toggle').style.display='none';
  window.HackemonMusic.setScene('encounter',r.id);
@@ -237,7 +245,7 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result'].includes(mode);if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=$('#mini').hidden=['start','login','enc','capture-result'].includes(mode);if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap()}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;

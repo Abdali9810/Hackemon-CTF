@@ -128,3 +128,5 @@ button,.download{font-size:10px;line-height:1.5}
 #msg.zone{left:15%;right:15%;bottom:auto;top:38%;background:#16241cee;border:3px solid #47745b;color:#9be8c8;text-align:center;font-size:16px;letter-spacing:.2em;text-transform:uppercase}
 #liga{position:absolute;z-index:4;inset:0;display:none;place-items:center;overflow:auto;padding:16px;box-sizing:border-box;background:rgba(10,20,12,.94)}
 #liga-stats{color:#c5d5c8}
+#mini{position:absolute;right:8px;bottom:8px;z-index:2;width:96px;height:64px;background:#000a;border:2px solid #47745b;border-radius:6px;image-rendering:pixelated;opacity:.9}
+#mini[hidden]{display:none}
