@@ -3,78 +3,74 @@
 Cada mejora es **un commit independiente**: `git cherry-pick <sha>` de la que
 quieras, descarta las demás. Ninguna depende de otra.
 
-## M1 · Jingle de victoria al capturar
+Leyenda: ✅ implementada · ⏳ pendiente de aprobación
 
-Ampliar `sfx.caught()` en `game-audio.js` a una fanfarria completa estilo
-Pokémon (arpegio de captura + resolución mayor). Misma firma → `game.js` no
-cambia. Solo `game-audio.js`.
+---
 
-## M2 · Frontend de CorpX (8081) con estética del juego
+# Parte 1 — implementada
 
-Restilar las respuestas de `main.py` (`/`, `/portal`, `/backup`,
-`/api/flag`): tema oscuro, bordes pixelados, mono, logo CorpX, scanlines —
-vía `app/corpx.css` nuevo servido por la app `obj`. **Sin tocar la lógica**
-(mismas rutas, mismo SQLi). Única mejora que exige `up --build -d`.
+| # | Mejora | Commit | Toca |
+|---|--------|--------|------|
+| M1 | Jingle de victoria completo al capturar (amplía `sfx.caught()`) | `4245631` | `game-audio.js` |
+| M2 | Frontend CorpX (8081) con estética del juego — sin tocar lógica/SQLi | `a23886c` | `main.py` + `corpx.css` |
+| M3 | Viento en hierba, flores y copas (vaivén con `tm`) | `eb4804c` | `game.js` |
+| M4 | Transición de batalla al entrar al reto (barras de zona + whoosh) | `c088356` | `game.js` |
+| M5 | Medallas por zona completada: `S.medals`, toast, 3 insignias en HUD e inventario | `1049d7c` | `game.js` + `game.css` |
+| M6 | Distintivos por zona — Z1 lupas/notas/huellas · Z2 nodos/antenas/paquetes · Z3 terminales/candados/calaveras | `5e61421` | `game.js` |
+| M7 | Aceptar respuesta con o sin `CORPX{}` en todos los retos (reto 2 sigue siendo IPv6 cruda) | `1f306c0` | `game.js` |
+| E1 | Banner con nombre de zona al cruzar áreas | `7526a1d` | `game.js` + `game.css` |
+| E2 | Confeti de partículas `ZC[z]` al capturar y ganar medalla | `8a171bd` | `game.js` |
+| E3 | Pantalla "Liga Hackémon completada" (score, medallas, pistas, tiempo) | `fc63b8f` | `game.js` + `game.css` + `index.html` |
+| E4 | Minimapa en HUD | `37fc7f4` | `game.js` + `game.css` + `index.html` |
 
-## M3 · Viento en pasto y árboles
+# Parte 2 — implementada
 
-En `tile()` de `game.js`: píxeles de detalle en hierba y copas que oscilan con
-`Math.sin(tm/20 + x*0.7 + y*0.3)` — vaivén leve y desfasado por tile. Solo
-`game.js`.
+| # | Mejora | Commit | Toca |
+|---|--------|--------|------|
+| P2-1 | Minimapa: arriba-izquierda, solo en mapa, toggle con tecla **N** | `bd85bfc` | `game.js` + `game.css` + `index.html` |
+| P2-2 | HUD solo en mapa/diálogos — ya no solapa paneles/inventario/menú | `d2c9abf` | `game.js` |
+| P2-3 | Ventana responsive hasta 1440px + textos de paneles escalables | `7431d78` | `game.css` |
+| P2-4 | Textos de ayuda más grandes (footer `.k`, intro `.controls`) | `a3130d2` | `game.css` |
+| P2-5 | Árboles y flores con mejor pixel art (sombra, tronco, tallo, pétalos) | `f195181` | `game.js` |
+| P2-6 | Peces saltando en las tiles de agua | `57bc03a` | `game.js` |
+| P2-7 | NPC pescador junto al río de Z2 — bloquea paso, habla con tips + humor | `6620251` | `game.js` |
 
-## M4 · Transición de batalla al entrar al reto
+### Diálogos del pescador (`FISH_LINES`, game.js) — contenido nuevo, no original
 
-Antes de la cápsula actual (`kind:'open'` en `enc()`): barras horizontales
-alternadas en `ZC[r.zona]` que cierran la pantalla + whoosh (`sfx.throw()` ya
-existe). Solo `game.js`.
+- *Tips*: guardias/zonas · controles (Espacio, I, M, N) · costo de pistas (15 pts) · botón de descarga
+- *Humor*: "recuerdo cuando solía programar y hackear redes" · "usando el cerebro y no solo la IA" · "peces sin ping" · "récord de 40 años"
 
-## M5 · Medallas por zona completada
+# Parte 2 — pendiente de aprobación
 
-Al capturar la 4ª criatura de una zona: medalla (Lupa / Paquete / Root).
+## P2-8 ⏳ · Fondos de combate/captura por temática de zona
 
-- `S.medals` persistido en localStorage (`ctfm1`)
-- Toast "¡Medalla conseguida!" + `sfx.caught()` (no depende de M1)
-- 3 insignias en el HUD + fila en inventario, sprite pixel 10px
+Hoy la escena de captura (`enc()`) pinta siempre el mismo fondo: cielo
+`#bfe3ff`, colinas y pasto genérico. Propuesta: que el escenario de
+captura/batalla cambie según la zona del reto, igual que las barras de
+transición ya usan `ZC[r.zona]`:
 
-Archivos: `game.js` + `game.css`.
+- **Z1 "Ruta Césped"** (jardín): cielo azul claro, pasto verde, flores y
+  quizá una cerca/seto de fondo — el look actual pero "de jardín".
+- **Z2 "Bosque de Redes"** (propio estilo): ambiente de bosque tecnificado —
+  cielo anochecido, siluetas de árboles/cables, paquetes de luz pasando por
+  las líneas, tonos `#2f9fb0` (color de zona).
+- **Z3 "Cumbre Root"** (desierto): cielo cálido/atardecer, dunas de arena,
+  rocas — tonos `#d0703c`.
 
-## M6 · Distintivos temáticos por zona
+Implementación prevista: función `fondoEnc(zona)` en `game.js` que pinte el
+fondo de `enc()` según `r.zona`; la animación de cápsula/criatura/partículas
+queda igual encima. Solo `game.js`.
 
-Overlays en `drawMap()` (sin tocar el array `T`), posiciones deterministas:
+## Ideas propuestas (aún sin aprobar)
 
-- **Z1 Ruta Césped** (forense): lupas, notas, huellas
-- **Z2 Bosque de Redes**: nodos cableados, antenas, paquetes viajando
-- **Z3 Cumbre Root**: terminales `>_`, candados, calaveras pixeladas
-
-Sprites 10×10 estilo `mk()`. Solo `game.js`. Compatible con M3.
-
-## M7 · Fix de aceptación de flags (opcional)
-
-Hoy escribir la flag **completa** en el reto 1 falla (`CORPX{CORPX{...}}`).
-Normalizar input: quitar `CORPX{...}` opcional y reconstruir el formato
-canónico por reto (≠2 → `CORPX{inner}`; 2 → IPv6 cruda, sin cambios de
-formato). Solo `game.js`, handler `#bv`. Si no gusta, no se pickea.
-
-## E1 · Banner de zona
-
-Al cruzar x=240 / x=496: cartel "Entrando a Bosque de Redes" ~1.5 s. Solo
-`game.js` (reusa toast con clase nueva en `game.css`).
-
-## E2 · Confeti de victoria
-
-Ráfaga de partículas en `ZC[z]` sobre la pantalla de captura y al ganar
-medalla. Solo `game.js` (en `enc()`/capture-result).
-
-## E3 · Pantalla de "Liga completada"
-
-Al capturar la 12ª criatura: panel final con score, pistas usadas y tiempo —
-reemplaza el toast actual solo para ese caso. `game.js` + `game.css`.
-
-## E4 · Minimapa en HUD
-
-Canvas pequeño con vista del mapa `T`, punto del jugador y cápsulas por zona.
-`game.js` + `game.css` + `index.html` (un `<canvas>`).
+- NPCs temáticos en Z1 (niña con lupa — tips OSINT) y Z3 (hacker — tips web).
+- Medalla extra "Purista": zona completada sin usar pistas.
+- Ambiente sonoro por zona en `updateAmbient` (viento Z1, zumbido Z3).
+- Ciclo de iluminación suave (día/noche leve) sobre el mapa.
+- Renombrar Z1 "Ruta Césped" → "Pradera Recon"/"Ruta OSINT" (su contenido es
+  recon básico; "Bosque de Redes" y "Cumbre Root" sí casan con sus retos).
 
 ## Verificación
 
-`static/` va por volumen → `Ctrl+F5`. Solo M2 pide rebuild.
+`static/` va por volumen → `Ctrl+F5`. Solo M2 pide rebuild
+(`docker compose up --build -d`). Todo lo demás ya está en vivo.
