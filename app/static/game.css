@@ -89,6 +89,32 @@ body.menu-open #c{filter:blur(2px) saturate(.85);transform:scale(1.015);transiti
 .pause-btn-continue:hover{filter:brightness(1.07)}
 .pause-continue-hint{font-family:'VT323',ui-monospace,monospace;font-size:clamp(14px,1.15vw,16px);line-height:1;color:#d4f0e0;letter-spacing:.04em}
 .pause-menu .pause-btn-continue{margin:0}
+/* Diálogo de confirmación (estilo caja de texto RPG) */
+#game-confirm{position:absolute;z-index:6;inset:0;display:grid;place-items:center;padding:clamp(10px,3vw,20px);box-sizing:border-box;animation:confirm-fade .2s ease both}
+#game-confirm[hidden]{display:none!important}
+@keyframes confirm-fade{from{opacity:0}to{opacity:1}}
+.game-confirm-scrim{position:absolute;inset:0;background:rgba(2,6,4,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.game-confirm-panel{position:relative;width:min(100%,400px);border-radius:14px;border:3px solid #315fa8;background:linear-gradient(168deg,#1a3028,#12261d 55%,#0f1a14);box-shadow:0 0 0 2px #0a100c,0 24px 60px #000d;overflow:hidden;animation:pause-in .35s cubic-bezier(.16,1,.3,1) both}
+.game-confirm-stripe{position:relative;margin:0}
+.game-confirm-head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:2px solid #315744}
+.game-confirm-npc{flex:0 0 auto;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#0f1a14;border:2px solid #47745b}
+.game-confirm-head .eyebrow{margin:0 0 4px}
+.game-confirm-head h2{margin:0!important;font-size:clamp(9px,1.8vw,11px)!important;line-height:1.5!important;color:#f2f7df}
+.game-confirm-textbox{margin:12px 14px;padding:12px 14px;border-radius:8px;border:3px solid #586878;border-bottom-width:4px;background:linear-gradient(180deg,#fafaf6,#ecece4);color:#1a1a22;box-shadow:inset 0 1px 0 #fff}
+.game-confirm-textbox p{margin:0;font-family:'VT323',ui-monospace,monospace;font-size:clamp(17px,1.45vw,20px);line-height:1.28;color:#1a1a22}
+.game-confirm-panel[data-tone="exit"] .game-confirm-textbox{border-color:#315fa8}
+.game-confirm-panel[data-tone="warn"] .game-confirm-textbox{border-color:#a05040}
+.game-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 14px 8px}
+.game-confirm-btn{margin:0!important;padding:11px 10px;border-radius:10px;border:2px solid #47745b;font-family:'Press Start 2P',ui-monospace,monospace;font-size:clamp(7px,1.3vw,8px);line-height:1.5;cursor:pointer;transition:transform .12s,filter .15s,border-color .15s}
+.game-confirm-btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.game-confirm-btn--no{color:#e8f0e0;background:linear-gradient(180deg,#2a4a3a,#1b3025);box-shadow:0 3px 0 #0a100c}
+.game-confirm-btn--no:hover{border-color:#9be8c8}
+.game-confirm-btn--yes{color:#fff;background:linear-gradient(180deg,#38a96b,#2f8f5b);border-color:#6ee7a866;box-shadow:0 3px 0 #1e5a38,inset 0 1px 0 #fff4}
+.game-confirm-panel[data-tone="warn"] .game-confirm-btn--yes{background:linear-gradient(180deg,#d07050,#a04838);border-color:#e8a080;box-shadow:0 3px 0 #5a2818,inset 0 1px 0 #fff3}
+.game-confirm-panel[data-tone="exit"] .game-confirm-btn--yes{background:linear-gradient(180deg,#4a78c8,#315fa8);border-color:#8bb9ff;box-shadow:0 3px 0 #1e3a78,inset 0 1px 0 #fff4}
+.game-confirm-hint{margin:0;padding:0 14px 12px;text-align:center;font-family:'VT323',ui-monospace,monospace;font-size:clamp(14px,1.15vw,16px);color:#9db3ab}
+@media(max-width:380px){.game-confirm-actions{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){#game-confirm,.game-confirm-panel{animation:none}}
 #msg{position:absolute;left:2%;right:2%;bottom:3%;background:#f8f8f0;color:#202020;border:3px solid #384050;border-radius:6px;padding:8px 12px;display:none;font-weight:bold}
 #panel,#inv{position:absolute;inset:56px 0 0 0;background:linear-gradient(165deg,#0a100c,#0f1a14 45%,#12261d);display:none;overflow:hidden;padding:0;box-sizing:border-box}
 #inv{overflow-y:auto;padding:clamp(10px,2vw,18px);background:linear-gradient(165deg,#0a100c,#0f1a14 40%,#12261d),radial-gradient(ellipse 80% 50% at 50% 0%,rgba(49,95,168,.12),transparent 58%)}

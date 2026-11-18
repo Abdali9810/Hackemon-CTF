@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
-let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',PLAYER='',ADMIN=null,DLG=null,lastZ=0;
+let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0;
 let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0;
 let playerOutfitColor='#2fa84f';
 let playerAccessory='cap';
@@ -96,8 +96,12 @@ function initVolumes(){const v=window.HackemonMusic.getVolumes();
   el.oninput=()=>{show();window.HackemonMusic.setVolume(k,el.value/100)};
   if(k==='sfx')el.onchange=()=>window.HackemonMusic.sfx.step('grass')}}
 function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open')}
-function restartChallenges(){if(!window.confirm('¿Empezar una nueva partida? Se borrarán todas las criaturas capturadas.'))return;S={cap:{},hints:{},skin:playerOutfitColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
-function exitToStart(){if(!window.confirm('¿Salir al inicio? Se iniciará una nueva partida y se borrará el progreso actual.'))return;S={cap:{},hints:{},skin:playerOutfitColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
+function openGameConfirm(opts){modeBeforeConfirm=mode;mode='confirm';confirmOk=opts.onConfirm||null;const panel=$('#game-confirm .game-confirm-panel');panel.dataset.tone=opts.tone||'warn';$('#confirm-eyebrow').textContent=opts.eyebrow||'Asistente del laboratorio';$('#confirm-title').textContent=opts.title||'¿Estás seguro?';$('#confirm-message').textContent=opts.message||'';$('#confirm-yes').textContent=opts.yes||'Sí, continuar';$('#confirm-no').textContent=opts.no||'No, volver';$('#game-confirm').hidden=false;$('#confirm-no').focus()}
+function closeGameConfirm(accepted){$('#game-confirm').hidden=true;const back=modeBeforeConfirm;mode=back;const fn=confirmOk;confirmOk=null;if(accepted&&fn)fn()}
+function applyRestart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
+function applyExitToStart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
+function restartChallenges(){openGameConfirm({tone:'warn',eyebrow:'Registro Hackédex',title:'¿Nueva partida?',message:'¿Quieres comenzar otra aventura? Se borrarán todas las criaturas capturadas y tu progreso en el mundo. No podrás recuperarlo.',yes:'Sí, empezar de cero',no:'No, seguir jugando',onConfirm:applyRestart})}
+function exitToStart(){openGameConfirm({tone:'exit',eyebrow:'Puerta del laboratorio',title:'¿Volver a la pantalla de inicio?',message:'Se reiniciará la partida y se borrará todo tu avance actual.',yes:'Sí, salir',no:'No, quedarme',onConfirm:applyExitToStart})}
 const QUIPS=[
  r=>['¡Vaya, vaya!',`Capturaste a ${r.criatura}, ${PLAYER}. No te pongas la capucha de hacker todavía: hasta un reloj roto acierta dos veces al día.`],
  r=>['¿Fue suerte?',`${r.criatura} ya es tuyo. Los logs dicen que fue habilidad; nosotros preferimos esperar a la auditoría.`],
@@ -380,6 +384,7 @@ function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h
    else{o.className='challenge-result bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
   catch(e){o.className='challenge-result bad';o.textContent='No se pudo contactar al servidor.'}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter'].includes(k)){e.preventDefault();nextDialog()}return}
+ if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if([' ','enter'].includes(k)){e.preventDefault();closeGameConfirm(true);return}return}
  if(mode==='login'){if(e.key==='Escape'){$('#login').style.display='none';mode='start'}return}if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
  if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
@@ -389,7 +394,7 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result','confirm'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
@@ -399,6 +404,8 @@ $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
 $('#menu-restart').onclick=restartChallenges;
 $('#menu-exit').onclick=exitToStart;
+$('#confirm-yes').onclick=()=>closeGameConfirm(true);
+$('#confirm-no').onclick=()=>closeGameConfirm(false);
 $('#enter-game').onclick=()=>{if(mode!=='start'||!R.length)return;$('#landing-screen').hidden=true;$('#story-screen').hidden=false;$('#start').scrollTop=0};
 $('#choose-screen').onclick=()=>{if(mode!=='start'||!R.length)return;$('#start').scrollTop=0;$('#story-screen').hidden=true;$('#character-screen').hidden=false;renderCharacterSelection()};
 $('#back-story').onclick=()=>{$('#start').scrollTop=0;$('#character-screen').hidden=true;$('#story-screen').hidden=false};

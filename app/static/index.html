@@ -200,6 +200,30 @@
       </div>
     </section>
 
+    <section id="game-confirm" class="game-confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" hidden>
+      <div class="game-confirm-scrim" aria-hidden="true"></div>
+      <div class="game-confirm-panel trainer-ui" data-tone="warn">
+        <div class="trainer-menu-stripe game-confirm-stripe" aria-hidden="true"></div>
+        <header class="game-confirm-head">
+          <span class="game-confirm-npc" aria-hidden="true">
+            <svg class="pokeball-badge" viewBox="0 0 32 32" width="36" height="36"><circle cx="16" cy="16" r="14" fill="#f4f4f0" stroke="#202830" stroke-width="2"/><path d="M2 16h28" stroke="#202830" stroke-width="2"/><path d="M2 16a14 14 0 0 1 28 0Z" fill="#e04848"/><circle cx="16" cy="16" r="4.5" fill="#f4f4f0" stroke="#202830" stroke-width="2"/></svg>
+          </span>
+          <div>
+            <p id="confirm-eyebrow" class="eyebrow">Asistente del laboratorio</p>
+            <h2 id="confirm-title">¿Estás seguro?</h2>
+          </div>
+        </header>
+        <div class="game-confirm-textbox" id="confirm-text">
+          <p id="confirm-message"></p>
+        </div>
+        <div class="game-confirm-actions">
+          <button id="confirm-no" class="game-confirm-btn game-confirm-btn--no" type="button">No, volver</button>
+          <button id="confirm-yes" class="game-confirm-btn game-confirm-btn--yes" type="button">Sí, continuar</button>
+        </div>
+        <p class="game-confirm-hint">Enter · confirmar · Esc · cancelar</p>
+      </div>
+    </section>
+
     <section id="capture-message" aria-labelledby="capture-title">
       <div class="menu-card">
         <p class="eyebrow">¡Hackémon capturado!</p>
