@@ -14,6 +14,9 @@ def retos(): return jsonify(PUB)
 @game.get("/descargas/foca")
 def descargar_foca():
     return send_from_directory("/downloads", "FOCA-v3.4.7.1.zip", as_attachment=True)
+@game.get("/descargas/informe_recon_iana_oculto.pdf")
+def descargar_informe_iana():
+    return send_from_directory("/downloads", "informe_recon_iana_oculto.pdf", as_attachment=True)
 tries = defaultdict(deque)
 @game.post("/api/validar")
 def validar():
@@ -88,6 +91,7 @@ def tcp(port, fn):
             except Exception: pass
     threading.Thread(target=Q(("0.0.0.0", port), H).serve_forever, daemon=True).start()
 SEQ, ev = [7003, 7001, 7002], defaultdict(list)
+tcp(9003, lambda s, ip, ts: s.sendall(b"220 Hackemon-FTP listo\r\n"))
 for p in SEQ: tcp(p, lambda s, ip, ts, p=p: ev[ip].append((p, ts)))
 def door(s, ip, ts):
     now = time.time(); last = [p for p, t in sorted(ev[ip], key=lambda e: e[1]) if now - t < 15][-3:]

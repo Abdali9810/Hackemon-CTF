@@ -1,6 +1,6 @@
 F = {i: f for i, f in enumerate([
  "HACKEMON{foca_en_los_metadatos}", "2600:3c01:e000:3e6::6d4e:7061", "HACKEMON{las_cabeceras_hablan}",
- "HACKEMON{sunshine}", "HACKEMON{http_sin_cifrar_se_ve_todo}", "HACKEMON{ftp_en_texto_plano}",
+ "Port21", "HACKEMON{http_sin_cifrar_se_ve_todo}", "HACKEMON{ftp_en_texto_plano}",
  "HACKEMON{dns_tambien_filtra_datos}", "HACKEMON{metadatos_que_delatan}", "HACKEMON{icmp_oculta_mensajes}",
  "HACKEMON{inyeccion_sql_clasica}", "HACKEMON{enumerar_antes_de_atacar}", "HACKEMON{golpea_las_puertas_en_orden}"], 1)}
 D = "http://127.0.0.1:8080/descargas/"
@@ -22,8 +22,14 @@ RETOS = [
    ["Abre tu consola o terminal (CMD, PowerShell o Bash) y ejecuta directamente el comando nslookup nmap.org.","Analiza la salida en la pantalla. Una dirección IPv6 se diferencia de la tradicional IPv4 porque es mucho más larga, incluye letras y está separada por bloques de dos puntos (:).","A diferencia de las direcciones tradicionales, la IPv6 que buscas utiliza formato hexadecimal."]),
  r(3,1,6,24,"Cabeceras que hablan","Cabecín","Web","Los desarrolladores dejaron algo en la respuesta HTTP de la página principal.",W,["curl -I","navegador (F12)"],E_WEB,
    ["curl -i "+W,"Mira las cabeceras X-...","Busca una cabecera de depuración."]),
- r(4,1,12,22,"Hash descuidado","Hashlín","Cripto","Descarga el archivo con un hash MD5. Recupera la contraseña original: la bandera es HACKEMON{contraseña}.",D+"reto04_hash.txt",["hashid","john","hashcat"],"Romper hashes solo es legítimo con datos propios o autorizados. Defensa: contraseñas largas y hashes lentos (bcrypt, argon2).",
-   ["hashid reto04_hash.txt","john --format=raw-md5 --wordlist=/usr/share/wordlists/rockyou.txt reto04_hash.txt","Si rockyou.txt no existe: sudo gunzip /usr/share/wordlists/rockyou.txt.gz"]),
+ r(4,1,12,22,"El saludo del FTP","Portulín","Red / FTP",
+   "Desde la terminal de Kali Linux, usa curl para consultar el banner del servidor FTP simulado en tu laboratorio local. El servicio de prueba escucha en el puerto 9003.",
+   "curl [opciones] ftp://127.0.0.1:9003/ — identifica el puerto estándar de control de FTP. Ingresa solo el valor, sin FLAG{} ni otros caracteres.",
+   ["curl","FTP"],
+   "Conéctate únicamente al servicio local del laboratorio. No utilices estas instrucciones para consultar sistemas públicos sin autorización.",
+   ["Agrega -v después de curl para mostrar los detalles de la conexión.",
+    "Agrega --connect-timeout 5 para limitar la espera a cinco segundos.",
+    "Usa ftp://127.0.0.1:9003/. El servicio local usa 9003 para la prueba; ¿cuál es el puerto estándar de control de FTP?"]),
  r(5,2,20,7,"Login en claro","Tiburín","Red","Alguien inició sesión en un sitio sin HTTPS. Encuentra su clave en la captura.",D+"reto05_http.pcap",["Wireshark","tshark"],E_PCAP,
    ["Filtro de Wireshark: http.request.method == \"POST\"","Abre el paquete y mira el cuerpo del formulario.","tshark -r reto05_http.pcap -Y http.request.method==POST -T fields -e urlencoded-form.value"]),
  r(6,2,27,9,"FTP sin cifrar","Ftupo","Red","Una sesión FTP quedó grabada. Recupera la contraseña.",D+"reto06_ftp.pcap",["Wireshark"],E_PCAP,
