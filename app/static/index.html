@@ -224,6 +224,65 @@
       </div>
     </section>
 
+    <section id="zone-briefing" class="zone-briefing" role="dialog" aria-modal="true" aria-labelledby="zone-briefing-title" hidden>
+      <div class="zone-briefing-scrim" aria-hidden="true"></div>
+      <article class="zone-briefing-panel trainer-ui">
+        <div class="trainer-menu-stripe" aria-hidden="true"></div>
+        <header class="zone-briefing-top">
+          <div class="zone-briefing-sparks" aria-hidden="true"></div>
+          <h2 id="zone-briefing-title" class="zone-briefing-title">¡Felicidades, entrenador!</h2>
+          <p class="eyebrow zone-briefing-kicker">Pradera Recon · 4/4 retos</p>
+          <div class="zone-briefing-stage" aria-hidden="true">
+            <span class="zone-briefing-ring"></span>
+            <canvas id="briefing-mascot" class="zone-briefing-mascot" width="96" height="96"></canvas>
+          </div>
+          <div class="zone-briefing-award">
+            <img id="zone-briefing-medal" class="zone-briefing-medal" width="40" height="40" alt="">
+            <span id="zone-briefing-medal-name" class="zone-briefing-medal-name">Medalla Lupa</span>
+          </div>
+        </header>
+        <div class="zone-briefing-body">
+          <section class="zone-briefing-block zone-briefing-block--story" aria-labelledby="briefing-story-label">
+            <h3 id="briefing-story-label" class="trainer-section-label">Del profesor del laboratorio</h3>
+            <div class="zone-briefing-textbox">
+              <p class="zone-briefing-lead">Has superado los primeros desafíos. Pero no te emociones demasiado: lo que viene requiere algo más que ejecutar comandos al azar y esperar que Pikachu haga todo el trabajo.</p>
+            </div>
+          </section>
+          <section class="zone-briefing-block zone-briefing-block--prep" aria-labelledby="briefing-prep-label">
+            <div class="zone-briefing-warn" role="note">
+              <p class="zone-briefing-warn-tag">¡ADVERTENCIA!</p>
+              <p>Antes de continuar, prepara el terreno. Necesitarás <strong>dos máquinas virtuales</strong>:</p>
+            </div>
+            <h3 id="briefing-prep-label" class="trainer-section-label">Configura tu laboratorio</h3>
+            <ul class="zone-briefing-vms">
+              <li class="vm-card vm-card--docker">
+                <span class="vm-card-num">01</span>
+                <div class="vm-card-body">
+                  <b>Máquina 1</b>
+                  <span>Docker y entorno objetivo</span>
+                </div>
+              </li>
+              <li class="vm-card vm-card--kali">
+                <span class="vm-card-num">02</span>
+                <div class="vm-card-body">
+                  <b>Máquina 2</b>
+                  <span>Pruebas desde Kali Linux</span>
+                </motion.div>
+              </li>
+            </ul>
+            <div class="zone-briefing-net">
+              <span class="zone-briefing-net-icon" aria-hidden="true">◎</span>
+              <p>Red en modo <strong>Host-Only</strong> en ambas para que se comuniquen entre sí.</p>
+            </div>
+          </section>
+        </div>
+        <footer class="zone-briefing-foot">
+          <button id="zone-briefing-continue" class="zone-briefing-btn" type="button">¡Listo para la siguiente zona!</button>
+          <p class="game-confirm-hint">Espacio · Enter</p>
+        </footer>
+      </article>
+    </section>
+
     <section id="capture-message" aria-labelledby="capture-title">
       <div class="menu-card">
         <p class="eyebrow">¡Hackémon capturado!</p>

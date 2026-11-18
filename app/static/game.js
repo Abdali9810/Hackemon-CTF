@@ -2,7 +2,7 @@ const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
 let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0;
-let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0;
+let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0;
 let playerOutfitColor='#2fa84f';
 let playerAccessory='cap';
 const characters=[
@@ -139,9 +139,21 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  if(ADMIN)lines.push('Modo administrador activado: veo las respuestas, puedo saltar retos y los guardias me dejan pasar. Solo para pruebas.');
  lines.push('¿Listos? ¡Que empiece la aventura!');
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
-function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';mode='map';$('#menu-toggle').style.display='block';window.HackemonMusic.setScene('world');
- if(pendingMedal){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[pendingMedal],40);toast(`¡${MED[pendingMedal]} conseguida${(S.pure||{})[pendingMedal]?' · sin pistas':''}! Completaste ${ZN[pendingMedal]} · [I] inventario`,6000);pendingMedal=null}
- else toast(`¡Capturaste a ${captureResult.criatura}! (${total()}/12) · [I] inventario`,4000);captureResult=null;
+function drawBriefingMascot(now){const canvas=$('#briefing-mascot');if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);const t=now-briefingT0,bob=Math.sin(t/280)*3,sq=Math.sin(t/120)>0?1:0,s=3,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.floor(x)*s,Math.floor(y+bob)*s,s,s)};
+ const ox=11,oy=10;
+ [[1,1,'#c87810'],[2,1,'#f8d030'],[3,1,'#f8d030'],[4,1,'#f8d030'],[5,1,'#c87810'],[0,2,'#f8d030'],[1,2,'#ffe566'],[2,2,'#ffe566'],[3,2,'#ffe566'],[4,2,'#ffe566'],[5,2,'#ffe566'],[6,2,'#f8d030'],[1,3,'#e0a820'],[2,3,'#ffe566'],[3,3,'#ffe566'],[4,3,'#ffe566'],[5,3,'#e0a820'],[2,4,'#202830'],[3,4,'#202830'],[1,5,'#f8d030'],[2,5,'#ffe566'],[3,5,'#ffe566'],[4,5,'#ffe566'],[5,5,'#f8d030'],[0,6,'#f8d030'],[1,6,'#e0a820'],[2,6,'#e0a820'],[3,6,'#e0a820'],[4,6,'#e0a820'],[5,6,'#e0a820'],[6,6,'#f8d030']].forEach(([x,y,c])=>px(ox+x,oy+y,c));
+ const tail=sq?[[6,5],[7,6],[8,7]]:[[6,5],[7,4],[8,3]];tail.forEach(([x,y])=>px(ox+x,oy+y,'#f8d030'));
+ px(ox-1,oy+2,'#f8d030');px(ox+7,oy+2,'#f8d030');
+ for(let i=0;i<6;i++){const a=t/160+i*1.05,d=8+Math.sin(t/90+i)*2,cx=ox+5+Math.cos(a)*d,cy=oy+4+Math.sin(a)*d*.7;ctx.fillStyle=i%2?'#ffe566':'#fff';ctx.fillRect(cx*s,cy*s,s,s)}
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;if(reduced){ctx.fillStyle='#ffe566';ctx.fillRect((ox+9)*s,(oy+1)*s,s,s);ctx.fillRect((ox-1)*s,(oy+4)*s,s,s)}}
+function openZone1Briefing(){briefingT0=performance.now();mode='zone-briefing';$('#zone-briefing').hidden=false;$('#menu-toggle').style.display='none';$('#zone-briefing-title').textContent=PLAYER?`¡Felicidades, ${PLAYER}!`:'¡Felicidades, entrenador!';$('#zone-briefing-medal').src=medalImg(1).toDataURL();$('#zone-briefing-medal-name').textContent=MED[1];drawBriefingMascot(performance.now());$('#zone-briefing-continue').focus();window.HackemonMusic.sfx.caught?.()}
+function closeZone1Briefing(){S.briefingZ1=Date.now();persist();$('#zone-briefing').hidden=true;mode='map';$('#menu-toggle').style.display='block';burst(P.x+8,P.y+8,ZC[1],40);toast(`¡${MED[1]} conseguida${(S.pure||{})[1]?' · sin pistas':''}! Completaste ${ZN[1]} · [I] inventario`,6000)}
+function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';window.HackemonMusic.setScene('world');
+ const medalEarned=pendingMedal,capturedName=captureResult?.criatura;pendingMedal=null;captureResult=null;
+ if(medalEarned===1&&!S.briefingZ1){openZone1Briefing();return}
+ mode='map';$('#menu-toggle').style.display='block';
+ if(medalEarned){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[medalEarned],40);toast(`¡${MED[medalEarned]} conseguida${(S.pure||{})[medalEarned]?' · sin pistas':''}! Completaste ${ZN[medalEarned]} · [I] inventario`,6000)}
+ else if(capturedName)toast(`¡Capturaste a ${capturedName}! (${total()}/12) · [I] inventario`,4000);
  if(total()===12){const hh=Object.values(S.hints||{}).reduce((a,b)=>a+b,0),s=Math.floor((Date.now()-(S.t0||Date.now()))/1000);
   $('#liga-stats').innerHTML=`Puntuación: <b>${score()} pts</b> · Medallas: ${mcount()}/3 · Pistas usadas: ${hh} · Tiempo: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   $('#liga').style.display='grid';mode='liga'}}
@@ -385,6 +397,7 @@ function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h
   catch(e){o.className='challenge-result bad';o.textContent='No se pudo contactar al servidor.'}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter'].includes(k)){e.preventDefault();nextDialog()}return}
  if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if([' ','enter'].includes(k)){e.preventDefault();closeGameConfirm(true);return}return}
+ if(mode==='zone-briefing'){if([' ','enter'].includes(k)){e.preventDefault();closeZone1Briefing();return}return}
  if(mode==='login'){if(e.key==='Escape'){$('#login').style.display='none';mode='start'}return}if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
  if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
@@ -394,11 +407,12 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result','confirm'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result','confirm','zone-briefing'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(mode==='zone-briefing')drawBriefingMascot(performance.now());else if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
 $('#capture-continue').onclick=continueAfterCapture;
+$('#zone-briefing-continue').onclick=closeZone1Briefing;
 $('#liga-continue').onclick=()=>{$('#liga').style.display='none';mode='map'};
 $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
