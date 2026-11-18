@@ -123,15 +123,80 @@
       </div>
     </section>
 
-    <section id="game-menu" aria-labelledby="menu-title">
-      <div class="menu-card">
-        <p class="eyebrow">Hackémon</p>
-        <h2 id="menu-title">Menú del juego</h2>
-        <button id="menu-music" class="off" type="button" aria-pressed="false" aria-label="Activar música" title="Activar música">♫</button>
-        <button id="menu-inventory" type="button">Ver inventario</button>
-        <button id="menu-restart" type="button">Nueva partida</button>
-        <button id="menu-exit" type="button">Salir al inicio</button>
-        <button id="menu-close" type="button">Volver al juego</button>
+    <section id="game-menu" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+      <div class="pause-vignette" aria-hidden="true"></div>
+      <div class="menu-card pause-menu trainer-ui">
+        <div class="pause-menu-glow" aria-hidden="true"></div>
+        <div class="trainer-menu-stripe" aria-hidden="true"></div>
+        <header class="pause-menu-head">
+          <div class="pause-menu-brand">
+            <span class="pause-menu-badge pokeball-badge" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#f4f4f0" stroke="#202830" stroke-width="2"/><path d="M2 16h28" stroke="#202830" stroke-width="2"/><path d="M2 16a14 14 0 0 1 28 0Z" fill="#e04848"/><circle cx="16" cy="16" r="4.5" fill="#f4f4f0" stroke="#202830" stroke-width="2"/><circle cx="16" cy="16" r="2" fill="#202830"/></svg>
+            </span>
+            <div>
+              <p class="eyebrow">Hackémon · Mundo CTF</p>
+              <h2 id="menu-title">Menú del entrenador</h2>
+            </div>
+          </div>
+          <p id="menu-player" class="pause-menu-player" aria-live="polite"></p>
+        </header>
+
+        <p class="trainer-section-label">Resumen de la aventura</p>
+        <div class="pause-stats trainer-stat-grid" aria-label="Progreso de la partida">
+          <div class="trainer-stat-card trainer-stat-card--1">
+            <span id="menu-stat-caps" class="trainer-stat-value">0/12</span>
+            <span class="trainer-stat-label">Capturados</span>
+          </div>
+          <div class="trainer-stat-card trainer-stat-card--2">
+            <span id="menu-stat-medals" class="trainer-stat-value">0/3</span>
+            <span class="trainer-stat-label">Medallas</span>
+          </div>
+          <div class="trainer-stat-card trainer-stat-card--3">
+            <span id="menu-stat-score" class="trainer-stat-value">0</span>
+            <span class="trainer-stat-label">Puntos</span>
+          </div>
+        </div>
+
+        <p class="trainer-section-label">Opciones</p>
+        <nav class="pause-tiles" aria-label="Opciones del juego">
+          <button id="menu-inventory" class="pause-tile pause-tile--primary" type="button">
+            <span class="pause-tile-icon trainer-dex-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="7" y="5" width="18" height="22" rx="3" fill="#e85858" stroke="#202830" stroke-width="1.5"/><rect x="9" y="8" width="14" height="14" rx="2" fill="#78c8f0" stroke="#202830" stroke-width="1.2"/><circle cx="16" cy="15" r="5" fill="#f4f4f0" stroke="#202830" stroke-width="1.2"/></svg>
+            </span>
+            <span class="pause-tile-body">
+              <span class="pause-tile-title">Hackédex</span>
+              <span class="pause-tile-desc">Ver capturas, medallas y puntos</span>
+            </span>
+            <span class="pause-tile-kbd" aria-hidden="true">I</span>
+          </button>
+          <button id="menu-music" class="pause-tile pause-tile--audio off" type="button" aria-pressed="false" aria-label="Activar música" title="Activar música">
+            <span class="pause-tile-icon pause-tile-icon--audio" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="26" height="26" fill="currentColor"><path d="M22 6 14 12H8v8h6l8 6V6z"/><path class="pause-audio-wave" d="M24 12v8M27 10v12M30 8v16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <span class="pause-tile-body">
+              <span class="pause-tile-title">Música</span>
+              <span id="menu-music-status" class="pause-tile-desc">Apagada</span>
+            </span>
+          </button>
+        </nav>
+
+        <section class="pause-menu-danger" aria-labelledby="pause-danger-title">
+          <div class="pause-danger-head">
+            <h3 id="pause-danger-title">Zona de reinicio</h3>
+            <p class="pause-menu-danger-hint">Borra el progreso actual de forma permanente.</p>
+          </div>
+          <div class="pause-danger-actions">
+            <button id="menu-restart" class="pause-danger-btn" type="button">Nueva partida</button>
+            <button id="menu-exit" class="pause-danger-btn pause-danger-btn--ghost" type="button">Salir al inicio</button>
+          </div>
+        </section>
+
+        <footer class="pause-menu-foot">
+          <button id="menu-close" class="pause-btn-continue" type="button">
+            <span>Volver al juego</span>
+            <small class="pause-continue-hint">Esc · M</small>
+          </button>
+        </footer>
       </div>
     </section>
 
