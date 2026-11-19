@@ -1,8 +1,8 @@
 F = {i: f for i, f in enumerate([
  "CORPX{foca_en_los_metadatos}", "2600:3c01:e000:3e6::6d4e:7061", "220 IANA FTP Server",
  "Port21", "CORPX{http_sin_cifrar_se_ve_todo}", "CORPX{ftp_en_texto_plano}",
- "burbuja", "CORPX{SNMP_Win32_Users_Enumerated}", "CORPX{icmp_oculta_mensajes}",
- "CORPX{inyeccion_sql_clasica}", "CORPX{enumerar_antes_de_atacar}", "CORPX{golpea_las_puertas_en_orden}"], 1)}
+ "burbuja", "CORPX{SNMP_Win32_Users_Enumerated}", "CORPX{upload_sin_validar}",
+ "CORPX{inyeccion_sql_clasica}", "CORPX{enumerar_antes_de_atacar}", "CORPX{root_shell_conquistado}"], 1)}
 D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
 def r(i, z, x, y, titulo, cri, tipo, brief, objetivo, tools, etica, pistas, descarga=None,
@@ -57,12 +57,21 @@ RETOS = [
    ["SNMP opera sobre UDP, no TCP. Necesitas el flag -sU en nmap para sondear el puerto 161.",
     "Ejecuta: sudo nmap -v -sU -p 161 --script=snmp-win32-users 192.168.56.105",
     "Revisa la sección 'Account' en la salida de nmap. Una de las cuentas tiene un nombre fuera de lo ordinario — ese es tu flag."]),
- r(9,3,36,6,"Datos por DNS","Dnsito","Red","Un equipo comprometido sacó datos escondidos en consultas DNS.",D+"reto09_dns.pcap",["Wireshark","tshark","base32"],E_PCAP,
-   ["Filtro: dns.qry.name contains \"datos.corpx.lab\"","Une los fragmentos en orden (el número antes del guion).","Está en Base32; añade '=' hasta que el largo sea múltiplo de 8 y usa base32 -d."]),
+ r(9,3,36,6,"El Portal de Uplodex","Uplodex","Upload Web",
+   "El portal de verificación de CorpX acepta un archivo de configuración para validar tu identidad. Algo en su lógica no fue bien implementado — ¿puedes engañarla?",
+   "/api/upload-reto9",["navegador","curl","Burp Suite"],E_WEB,
+   ["El validador construye internamente: VERIFICAR rol='<valor>' AND nivel_acceso='0' — sin sanitizar el contenido del archivo.",
+    "Una comilla simple en el valor 'rol' puede romper la expresión. ¿Qué pasa si añades OR '1'='1 después?",
+    "Modifica la línea del archivo a: rol=visitante' OR '1'='1 y vuelve a subirlo."],
+   descarga=D+"reto09_upload.txt"),
  r(10,3,43,8,"Portal vulnerable","Inyectol","Web","El portal de login arma su consulta SQL concatenando texto. Entra como admin.",W+"/portal",["navegador","curl","burp (opcional)"],"La inyección SQL contra sistemas ajenos es delito. Defensa: consultas parametrizadas.",
    ["Prueba una comilla simple en el usuario y observa el error.","La consulta compara usuario Y clave. ¿Cómo anulas la parte de la clave?","Usuario: admin'--"]),
  r(11,3,37,24,"Enumerar antes de atacar","Gobustín","Web","Hay un directorio de respaldo olvidado con una credencial de API. Úsala en /api/flag.",W,["gobuster","curl"],E_WEB,
    ["gobuster dir -u "+W+" -w /usr/share/wordlists/dirb/common.txt -x bak","Repite dentro del directorio hallado.","curl -H 'X-API-Key: <clave>' "+W+"/api/flag"]),
- r(12,3,44,22,"Golpes en orden","Knocktopus","Red","El servicio oculto del puerto 7100 solo responde si 'golpeas' tres puertos en el orden correcto. La captura muestra un cliente legítimo.",D+"reto12_knock.pcap + 127.0.0.1:7100",["Wireshark","nc","nmap"],E_SCAN,
-   ["Filtro: tcp.flags.syn==1 && tcp.flags.ack==0 && tcp.dstport>=7001 && tcp.dstport<=7003","Anota el orden de los puertos 7001-7003.","for p in <orden>; do nc -z -w1 127.0.0.1 $p; done; nc 127.0.0.1 7100"]),
+ r(12,3,44,22,"La Conquista Final","Shellzord","SSH / Brute Force",
+   "El servidor CorpX en 192.168.56.105 tiene un servicio SSH activo. Los retos anteriores dejaron pistas sobre quién administra ese sistema. Encuéntralo todo, entra y reclama la bandera del administrador.",
+   "192.168.56.105",["hydra","ssh","medusa"],E_SCAN,
+   ["El reto 8 reveló los usuarios del sistema vía SNMP. Uno de esos nombres es inusual — ese es tu usuario SSH.",
+    "Desde 192.168.56.106 usa Hydra: hydra -l <usuario> -P /usr/share/wordlists/rockyou.txt ssh://192.168.56.105",
+    "Una vez dentro del sistema: cat ~/.flag — o si no: find / -name '.flag' 2>/dev/null"]),
 ]
