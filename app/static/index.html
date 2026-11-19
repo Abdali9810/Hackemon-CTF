@@ -298,6 +298,25 @@
       <small>Espacio / clic para continuar ▼</small>
     </div>
 
+    <section id="npc-minigame" class="npc-minigame" role="dialog" aria-modal="true" aria-labelledby="npc-game-title" aria-describedby="npc-game-prompt" hidden>
+      <article class="npc-game-card">
+        <div class="trainer-menu-stripe" aria-hidden="true"></div>
+        <p id="npc-game-kicker" class="eyebrow">Reto relámpago</p>
+        <h2 id="npc-game-title"></h2>
+        <div class="npc-game-scoreboard">
+          <p id="npc-game-progress" class="npc-game-progress"></p>
+          <span id="npc-game-prize" class="npc-game-prize">+15 PTS</span>
+        </div>
+        <div class="npc-game-track" aria-hidden="true"><span id="npc-game-track-fill"></span></div>
+        <div class="npc-game-prompt-box">
+          <p id="npc-game-prompt"></p>
+        </div>
+        <div id="npc-game-choices" class="npc-game-choices"></div>
+        <p id="npc-game-feedback" class="npc-game-feedback" role="status" aria-live="polite"></p>
+        <p class="npc-game-hint">Elige con clic o usa Tab y Enter · Esc para salir</p>
+      </article>
+    </section>
+
     <div id="msg" role="status" aria-live="polite"></div>
     <div id="panel"></div>
     <div id="inv"></div>

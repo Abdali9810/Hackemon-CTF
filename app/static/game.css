@@ -213,6 +213,28 @@ button,.download{font-size:10px;line-height:1.5}
 #dialog b{display:block;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.3vw,11px);color:#2c4a8a;margin-bottom:6px}
 #dialog p{margin:0 0 4px;font-size:clamp(17px,2.4vw,22px)}
 #dialog small{display:block;text-align:right;color:#666}
+.npc-minigame{position:absolute;z-index:7;inset:0;display:grid;place-items:center;padding:8px;box-sizing:border-box;background:rgba(2,8,5,.82);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.npc-minigame[hidden]{display:none!important}
+.npc-game-card{width:min(100%,520px);max-height:calc(100vh - 16px);overflow-y:auto;padding:0 14px 12px;box-sizing:border-box;border:3px solid #315fa8;border-radius:14px;background:linear-gradient(165deg,#1e362c,#12261d 55%,#0f1a14);box-shadow:0 0 0 2px #0a100c,0 0 36px #f8d03022,0 20px 50px #000b;text-align:center;animation:pause-in .3s cubic-bezier(.16,1,.3,1) both}
+.npc-game-card .trainer-menu-stripe{margin:0 -14px 10px}
+.npc-game-card .eyebrow{margin:0 0 6px;color:#9be8c8}
+.npc-game-card h2{margin:0 0 8px!important;font-family:'Press Start 2P',ui-monospace,monospace;font-size:clamp(9px,1.8vw,11px)!important;line-height:1.6!important;color:#f8d030;text-shadow:0 0 14px #f8d03033}
+.npc-game-scoreboard{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.npc-game-progress{margin:0;color:#9db3ab;font-size:15px}
+.npc-game-prize{padding:5px 9px;border:2px solid #58b848;border-radius:8px;background:#58b84822;color:#ffe566;font-family:'Press Start 2P',ui-monospace,monospace;font-size:8px;line-height:1.5;box-shadow:0 0 12px #58b84822}
+.npc-game-track{height:7px;margin:9px 0 12px;overflow:hidden;border:1px solid #47745b;border-radius:99px;background:#0a100c}
+.npc-game-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#58b848,#f8d030);box-shadow:0 0 10px #f8d03088;transition:width .25s ease}
+.npc-game-prompt-box{padding:10px 12px;border:3px solid #586878;border-bottom-width:4px;border-radius:8px;background:linear-gradient(180deg,#fafaf6,#ecece4);color:#1a1a22;box-shadow:inset 0 1px 0 #fff}
+.npc-game-prompt-box p{margin:0;font-size:clamp(17px,1.6vw,19px);line-height:1.25}
+.npc-game-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.npc-game-choice{width:100%;min-height:48px;margin:0!important;padding:9px 8px;border:2px solid #47745b;border-radius:9px;background:linear-gradient(180deg,#2a4a3a,#1b3025);color:#f2f7df;font-size:16px;line-height:1.2;cursor:pointer;transition:transform .12s,border-color .12s,filter .12s}
+.npc-game-choice:hover{transform:translateY(-1px);border-color:#9be8c8;filter:brightness(1.08)}
+.npc-game-choice--success{border-color:#f8d030;background:linear-gradient(180deg,#ffe566,#e0a820);color:#1a3028;font-weight:bold}
+.npc-game-feedback{min-height:1.3em;margin:7px 0 0;color:#9be8c8;font-size:16px}
+.npc-game-feedback.bad{color:#ffb0a0}
+.npc-game-hint{margin:5px 0 0;color:#9db3ab;font-size:14px}
+@media(max-width:480px){.npc-game-choices{grid-template-columns:1fr}.npc-game-choice{min-height:42px}}
+@media(prefers-reduced-motion:reduce){.npc-game-card,.npc-game-choice{animation:none;transition:none}}
 .admin-box{background:#2a1626;border:1px solid #a04a8a;border-radius:8px;padding:8px 12px;margin:8px 0;color:#f2c8e8}
 .admin-box code{user-select:all}
 #admin-skip{background:#8a3a7a}#admin-skip:hover{background:#a04a8a}
