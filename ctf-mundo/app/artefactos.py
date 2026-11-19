@@ -43,18 +43,27 @@ b32 = base64.b32encode(F[7].encode()).decode().rstrip("="); ch = [b32[i:i + 12] 
 names = ["www.google.com", "hackemon.lab"] + [f"{i}-{c}.datos.hackemon.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]
 names.insert(3, "cdn.example.org")
 w("reto07_dns.pcap", [Ether() / IP(src=A, dst="8.8.8.8") / UDP(sport=5300 + i, dport=53) / DNS(rd=1, qd=DNSQR(qname=n)) for i, n in enumerate(names)])
-# 9 icmp
-f = F[9].encode(); pk = []
-for i in range(0, len(f), 4):
-    pk.append(Ether() / IP(src=A, dst=B) / ICMP(type=8, id=0x1337, seq=i // 4) / Raw(f[i:i + 4]))
-    pk.append(Ether() / IP(src=A, dst=B) / ICMP(type=8, id=1, seq=i // 4) / Raw(b"abcdefghijklmnopqrstuvwabcdefghi"))
-w("reto09_icmp.pcap", pk)
-# 12 knock
-w("reto12_knock.pcap", [Ether() / IP(src=A, dst=B) / TCP(sport=41000 + i, dport=d, flags="S", seq=i) for i, d in enumerate([22, 7003, 80, 7001, 443, 7002, 8080])])
-# 8 imagen
-im = Image.new("RGB", (192, 192), "#16324f"); d = ImageDraw.Draw(im)
-for i in range(0, 192, 12): d.rectangle([i, 0, i + 6, 191], fill="#1f4f7a")
-d.ellipse([56, 56, 136, 136], fill="#f5a524"); d.text((64, 90), "Hackemon", fill="#101c19")
-pi = PngInfo(); pi.add_text("Author", "agente-hackemon"); pi.add_text("Comment", base64.b64encode(F[8].encode()).decode())
-im.save(os.path.join(O, "reto08_foto.png"), pnginfo=pi)
+# 9 upload
+upload_txt = ("# ===========================================================\n"
+              "# HACKEMON SISTEMA DE VERIFICACION DE IDENTIDAD v2.1\n"
+              "# ===========================================================\n"
+              "# Instrucciones:\n"
+              "#   1. Rellena el campo 'nombre' con tu identificador.\n"
+              "#   2. Sube este archivo usando el boton del reto.\n"
+              "# ===========================================================\n"
+              "\n"
+              "nombre=agente_nuevo\n"
+              "rol=visitante\n"
+              "nivel_acceso=0\n"
+              "estado=pendiente\n"
+              "\n"
+              "# ------ NOTAS INTERNAS (solo lectura) ------\n"
+              "# El validador ejecuta internamente:\n"
+              "#   VERIFICAR rol='<rol>' AND nivel_acceso='<nivel>'\n"
+              "# -------------------------------------------\n"
+              "# ADVERTENCIA: El modulo v2.1 NO sanitiza los valores\n"
+              "# del archivo. Caracteres como la comilla simple (')\n"
+              "# podrian alterar la logica de verificacion.\n"
+              "# -------------------------------------------\n")
+open(os.path.join(O, "reto09_upload.txt"), "w", encoding="utf-8").write(upload_txt)
 print("artefactos listos:", sorted(os.listdir(O)))
