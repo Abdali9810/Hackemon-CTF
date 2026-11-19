@@ -9,7 +9,7 @@ const MAP_WIDTH = 48;
 const MAP_HEIGHT = 32;
 const PASSABLE_TILES = [0, 1, 4, 5, 7];
 const ZONE_NAMES = ['', 'Ruta Césped', 'Bosque de Redes', 'Cumbre Root'];
-const ZONE_COLORS = ['', '#58b848', '#2f9fb0', '#d0703c'];
+const ZONE_COLORS = ['', '#00c8d4', '#e06010', '#6020c0'];
 const DIRECTIONS = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 
 let challenges = [];
