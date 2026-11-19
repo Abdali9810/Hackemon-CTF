@@ -1,7 +1,7 @@
 F = {i: f for i, f in enumerate([
  "CORPX{foca_en_los_metadatos}", "2600:3c01:e000:3e6::6d4e:7061", "220 IANA FTP Server",
  "Port21", "CORPX{http_sin_cifrar_se_ve_todo}", "CORPX{ftp_en_texto_plano}",
- "burbuja", "CORPX{metadatos_que_delatan}", "CORPX{icmp_oculta_mensajes}",
+ "burbuja", "CORPX{SNMP_Win32_Users_Enumerated}", "CORPX{icmp_oculta_mensajes}",
  "CORPX{inyeccion_sql_clasica}", "CORPX{enumerar_antes_de_atacar}", "CORPX{golpea_las_puertas_en_orden}"], 1)}
 D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
@@ -50,8 +50,13 @@ RETOS = [
     "Abre Wireshark y filtra por icmp. Selecciona un paquete Echo reply (no el request). Mira el campo Data — ¿ese contenido es el payload normal de un ping?",
     "Lo que ves en el campo Data del reply es texto legible. Cópialo tal cual y pégalo en la barra de direcciones de tu navegador."],
    plain=True),
- r(8,2,28,23,"Foto delatora","Exifox","Forense","Una foto filtrada guarda más de lo que muestra.",D+"reto08_foto.png",["exiftool","strings","base64"],"Los metadatos pueden exponer ubicación y autoría. Bórralos antes de publicar imágenes.",
-   ["exiftool reto08_foto.png","Mira el campo Comment.","Parece Base64: echo '...' | base64 -d"]),
+ r(8,2,28,23,"El Sensor SNMP de MIBito","MIBito","Enumeración UDP",
+   "El servidor CorpX expone su servicio SNMP en el puerto 161/UDP. Usa Nmap con el script snmp-win32-users para enumerar las cuentas del sistema y encontrar la bandera oculta.",
+   "192.168.56.105",["nmap","snmpwalk","onesixtyone"],
+   "El escaneo UDP sin autorización puede considerarse intrusión. El alcance de este reto es exclusivamente el servidor de laboratorio 192.168.56.105.",
+   ["SNMP opera sobre UDP, no TCP. Necesitas el flag -sU en nmap para sondear el puerto 161.",
+    "Ejecuta: sudo nmap -v -sU -p 161 --script=snmp-win32-users 192.168.56.105",
+    "Revisa la sección 'Account' en la salida de nmap. Una de las cuentas tiene un nombre fuera de lo ordinario — ese es tu flag."]),
  r(9,3,36,6,"Datos por DNS","Dnsito","Red","Un equipo comprometido sacó datos escondidos en consultas DNS.",D+"reto09_dns.pcap",["Wireshark","tshark","base32"],E_PCAP,
    ["Filtro: dns.qry.name contains \"datos.corpx.lab\"","Une los fragmentos en orden (el número antes del guion).","Está en Base32; añade '=' hasta que el largo sea múltiplo de 8 y usa base32 -d."]),
  r(10,3,43,8,"Portal vulnerable","Inyectol","Web","El portal de login arma su consulta SQL concatenando texto. Entra como admin.",W+"/portal",["navegador","curl","burp (opcional)"],"La inyección SQL contra sistemas ajenos es delito. Defensa: consultas parametrizadas.",
