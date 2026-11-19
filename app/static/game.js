@@ -419,7 +419,7 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<195){const ph=(k-105)%30;ball(cx,gy,6,ph<20?Math.sin(ph/20*Math.PI*2)*.5:0,zc)}
   else if(k<235){ball(cx,gy,6,0,zc);drawFX(0,0);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
-function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none';if(mode==='map')$('#menu-toggle').focus()}
+function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none';if(mode==='map')$('#c').focus()}
 function openInv(){mode='inv';const v=$('#inv');
  const medals=[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}">${(S.pure||{})[z]?`<img class=pur src="${pureImg().toDataURL()}" title="Zona sin pistas">`:''}<img src="${medalImg(z).toDataURL()}" alt=""><small>${(S.medals||{})[z]?esc(MED[z]):'???'}</small></div>`).join('');
  const cards=R.map(r=>{const got=S.cap[r.id];
