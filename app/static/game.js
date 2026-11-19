@@ -1,8 +1,8 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#00c8d4','#e06010','#6020c0'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
-let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0,clownWalk=null;
-let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0;
+let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,confirmReturnFocus=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0,activeNpcGame=null;
+let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0,briefingZone=1,briefingMascot=null;
 let playerOutfitColor='#2fa84f';
 let playerAccessory='cap';
 const characters=[
@@ -15,6 +15,7 @@ try{S=JSON.parse(localStorage.getItem('ctfm1'))||S}catch(e){}
 if(!S||typeof S!=='object')S={cap:{},hints:{}};
 if(!S.cap||typeof S.cap!=='object')S.cap={};
 if(!S.hints||typeof S.hints!=='object')S.hints={};
+if(!S.minigames||typeof S.minigames!=='object')S.minigames={};
 if(S.skin)playerOutfitColor=S.skin;
 if(S.accessory==='bow'||S.accessory==='cap')playerAccessory=S.accessory;
 if(characters.some(ch=>ch.id===S.character)){chosenCharacterId=S.character;activeCharacterIndex=characters.findIndex(ch=>ch.id===chosenCharacterId)}
@@ -23,8 +24,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const nz=z=>R.filter(r=>r.zona===z&&S.cap[r.id]).length,total=()=>R.filter(r=>S.cap[r.id]).length,unl=z=>z===1||!!ADMIN||nz(z-1)>=4;
 const basePts=r=>r.zona===1?100:r.zona===2?150:200;
 const revHints=r=>typeof S.hints[r.id]==='number'?Math.min(S.hints[r.id],(r.pistas||[]).length):0;
-const earned=r=>Math.max(0,basePts(r)-revHints(r)*15);
-const score=()=>R.reduce((s,r)=>s+(S.cap[r.id]?earned(r):0),0);
+const revPaidHints=r=>typeof S.paidHints?.[r.id]==='number'?Math.min(S.paidHints[r.id],revHints(r)):revHints(r);
+const earned=r=>Math.max(0,basePts(r)-revPaidHints(r)*15);
+const score=()=>R.reduce((s,r)=>s+(S.cap[r.id]?earned(r):0),0)+Object.entries(NPC_MINIGAMES).reduce((sum,[id,game])=>sum+(S.minigames[id]?game.rewardPoints:0),0);
 const hs=(x,y)=>((Math.imul(x,73856093)^Math.imul(y,19349663))>>>0)%100;
 function trackStartPointer(e){
  if(e.pointerType!=='mouse'||!R.length||matchMedia('(prefers-reduced-motion: reduce)').matches||($('#landing-screen').hidden&&$('#story-screen').hidden&&$('#character-screen').hidden))return;
@@ -88,18 +90,18 @@ function updateMusicButton(enabled){const label=enabled?'Desactivar música':'Ac
 function refreshPauseMenu(){const caps=$('#menu-stat-caps'),med=$('#menu-stat-medals'),pts=$('#menu-stat-score'),pl=$('#menu-player');
  if(caps)caps.textContent=`${total()}/12`;if(med)med.textContent=`${mcount()}/3`;if(pts)pts.textContent=String(score());
  if(pl)pl.textContent=PLAYER?`Entrenador(a) ${PLAYER}`:'Explorando el mundo'}
-function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};refreshPauseMenu();$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true');document.body.classList.add('menu-open')}
+function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};refreshPauseMenu();$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true');document.body.classList.add('menu-open');$('#menu-inventory').focus()}
 async function toggleMusic(){try{updateMusicButton(await window.HackemonMusic.toggle())}catch(e){console.error('No se pudo cambiar la música.',e);toast('No se pudo cambiar la música en este navegador.',4000)}}
-function setSoundPanel(open){$('#sound-panel').hidden=!open;$('#music-toggle').setAttribute('aria-expanded',String(open));if(open)window.HackemonMusic.unlock().catch(()=>{})}
+function setSoundPanel(open){$('#sound-panel').hidden=!open;$('#music-toggle').setAttribute('aria-expanded',String(open));if(open){window.HackemonMusic.unlock().catch(()=>{});$('#sound-music').focus()}else $('#music-toggle').focus()}
 function initVolumes(){const v=window.HackemonMusic.getVolumes();
  for(const k of ['music','sfx']){const el=$('#vol-'+k),out=$('#vol-'+k+'-val'),show=()=>out.textContent=el.value+'%';el.value=Math.round(v[k]*100);show();
   el.oninput=()=>{show();window.HackemonMusic.setVolume(k,el.value/100)};
   if(k==='sfx')el.onchange=()=>window.HackemonMusic.sfx.step('grass')}}
-function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open')}
-function openGameConfirm(opts){modeBeforeConfirm=mode;mode='confirm';confirmOk=opts.onConfirm||null;const panel=$('#game-confirm .game-confirm-panel');panel.dataset.tone=opts.tone||'warn';$('#confirm-eyebrow').textContent=opts.eyebrow||'Asistente del laboratorio';$('#confirm-title').textContent=opts.title||'¿Estás seguro?';$('#confirm-message').textContent=opts.message||'';$('#confirm-yes').textContent=opts.yes||'Sí, continuar';$('#confirm-no').textContent=opts.no||'No, volver';$('#game-confirm').hidden=false;$('#confirm-no').focus()}
-function closeGameConfirm(accepted){$('#game-confirm').hidden=true;const back=modeBeforeConfirm;mode=back;const fn=confirmOk;confirmOk=null;if(accepted&&fn)fn()}
-function applyRestart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
-function applyExitToStart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
+function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open');if(mode==='map')$('#menu-toggle').focus();else if(mode==='panel')$('#fl').focus();else if(mode==='inv')$('#inv .trainer-foot button').focus()}
+function openGameConfirm(opts){modeBeforeConfirm=mode;confirmReturnFocus=document.activeElement;mode='confirm';confirmOk=opts.onConfirm||null;const panel=$('#game-confirm .game-confirm-panel');panel.dataset.tone=opts.tone||'warn';$('#confirm-eyebrow').textContent=opts.eyebrow||'Asistente del laboratorio';$('#confirm-title').textContent=opts.title||'¿Estás seguro?';$('#confirm-message').textContent=opts.message||'';$('#confirm-yes').textContent=opts.yes||'Sí, continuar';$('#confirm-no').textContent=opts.no||'No, volver';$('#game-confirm').hidden=false;$('#confirm-no').focus()}
+function closeGameConfirm(accepted){$('#game-confirm').hidden=true;const back=modeBeforeConfirm;mode=back;const fn=confirmOk,returnFocus=confirmReturnFocus;confirmOk=null;confirmReturnFocus=null;if(accepted&&fn)fn();else if(returnFocus?.isConnected)returnFocus.focus()}
+function applyRestart(){S={cap:{},hints:{},minigames:{},skin:playerOutfitColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
+function applyExitToStart(){S={cap:{},hints:{},minigames:{},skin:playerOutfitColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
 function restartChallenges(){openGameConfirm({tone:'warn',eyebrow:'Registro Hackédex',title:'¿Nueva partida?',message:'¿Quieres comenzar otra aventura? Se borrarán todas las criaturas capturadas y tu progreso en el mundo. No podrás recuperarlo.',yes:'Sí, empezar de cero',no:'No, seguir jugando',onConfirm:applyRestart})}
 function exitToStart(){openGameConfirm({tone:'exit',eyebrow:'Puerta del laboratorio',title:'¿Volver a la pantalla de inicio?',message:'Se reiniciará la partida y se borrará todo tu avance actual.',yes:'Sí, salir',no:'No, quedarme',onConfirm:applyExitToStart})}
 const QUIPS=[
@@ -114,7 +116,7 @@ function captureSuccess(r,msg){closeAll(false);toast(msg);mode='enc';$('#menu-to
   if(pendingMedal){S.medals=S.medals||{};S.medals[r.zona]=Date.now();
    if(R.filter(q=>q.zona===r.zona).every(q=>!S.hints[q.id])){S.pure=S.pure||{};S.pure[r.zona]=Date.now()}}persist();captureResult=r;mode='capture-result';
   const q=r.id===2?['Reto completado','¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.']:pickQuip(r);
-  $('#capture-title').textContent=q[0];$('#capture-text').textContent=q[1];$('#capture-message').style.display='grid'}}}
+  $('#capture-title').textContent=q[0];$('#capture-text').textContent=q[1];$('#capture-message').style.display='grid';$('#capture-continue').focus()}}}
 function showDialog(who,lines,then){mode='dialog';keys={};DLG={who,lines,i:0,then};$('#menu-toggle').style.display='none';$('#dialog-who').textContent=who;$('#dialog-text').textContent=lines[0];$('#dialog').hidden=false}
 function nextDialog(){if(!DLG)return;if(++DLG.i<DLG.lines.length){$('#dialog-text').textContent=DLG.lines[DLG.i];return}
  const then=DLG.then;DLG=null;$('#dialog').hidden=true;mode='map';keys={};$('#menu-toggle').style.display='block';if(then)then()}
@@ -141,24 +143,42 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  if(ADMIN)lines.push('Modo administrador activado: veo las respuestas, puedo saltar retos y los guardias me dejan pasar. Solo para pruebas.');
  lines.push('¿Listos? ¡Que empiece la aventura!');
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
-function drawBriefingMascot(now){const canvas=$('#briefing-mascot');if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);const t=now-briefingT0,bob=Math.sin(t/280)*3,sq=Math.sin(t/120)>0?1:0,s=3,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.floor(x)*s,Math.floor(y+bob)*s,s,s)};
- const ox=11,oy=10;
- [[1,1,'#c87810'],[2,1,'#f8d030'],[3,1,'#f8d030'],[4,1,'#f8d030'],[5,1,'#c87810'],[0,2,'#f8d030'],[1,2,'#ffe566'],[2,2,'#ffe566'],[3,2,'#ffe566'],[4,2,'#ffe566'],[5,2,'#ffe566'],[6,2,'#f8d030'],[1,3,'#e0a820'],[2,3,'#ffe566'],[3,3,'#ffe566'],[4,3,'#ffe566'],[5,3,'#e0a820'],[2,4,'#202830'],[3,4,'#202830'],[1,5,'#f8d030'],[2,5,'#ffe566'],[3,5,'#ffe566'],[4,5,'#ffe566'],[5,5,'#f8d030'],[0,6,'#f8d030'],[1,6,'#e0a820'],[2,6,'#e0a820'],[3,6,'#e0a820'],[4,6,'#e0a820'],[5,6,'#e0a820'],[6,6,'#f8d030']].forEach(([x,y,c])=>px(ox+x,oy+y,c));
- const tail=sq?[[6,5],[7,6],[8,7]]:[[6,5],[7,4],[8,3]];tail.forEach(([x,y])=>px(ox+x,oy+y,'#f8d030'));
- px(ox-1,oy+2,'#f8d030');px(ox+7,oy+2,'#f8d030');
- for(let i=0;i<6;i++){const a=t/160+i*1.05,d=8+Math.sin(t/90+i)*2,cx=ox+5+Math.cos(a)*d,cy=oy+4+Math.sin(a)*d*.7;ctx.fillStyle=i%2?'#ffe566':'#fff';ctx.fillRect(cx*s,cy*s,s,s)}
- const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;if(reduced){ctx.fillStyle='#ffe566';ctx.fillRect((ox+9)*s,(oy+1)*s,s,s);ctx.fillRect((ox-1)*s,(oy+4)*s,s,s)}}
-function openZone1Briefing(){briefingT0=performance.now();mode='zone-briefing';$('#zone-briefing').hidden=false;$('#menu-toggle').style.display='none';$('#zone-briefing-title').textContent=PLAYER?`¡Felicidades, ${PLAYER}!`:'¡Felicidades, entrenador!';$('#zone-briefing-medal').src=medalImg(1).toDataURL();$('#zone-briefing-medal-name').textContent=MED[1];drawBriefingMascot(performance.now());$('#zone-briefing-continue').focus();window.HackemonMusic.sfx.caught?.()}
-function closeZone1Briefing(){S.briefingZ1=Date.now();persist();$('#zone-briefing').hidden=true;mode='map';$('#menu-toggle').style.display='block';burst(P.x+8,P.y+8,ZC[1],40);toast(`¡${MED[1]} conseguida${(S.pure||{})[1]?' · sin pistas':''}! Completaste ${ZN[1]} · [I] inventario`,6000)}
+const ZONE_BRIEFINGS={
+ 1:{
+  story:'¡Medalla Lupa para ti! Superaste los primeros desafíos y descubriste que las pistas sí sirven; Pikachu agradece que ya no le pidas resolverlo todo. Celebra, entrenador: el Bosque de Redes te espera.'
+ },
+ 2:{
+  story:'¡Medalla Paquete conseguida! Encontraste vecinos, reconociste a Apache y pescaste chismes en ICMP y SNMP. El router pide vacaciones; tú puedes presumir hasta que aparezcan DNS, SQL y puertos tímidos.'
+ },
+ 3:{
+  story:'¡Lo lograste! Completaste los 12 retos y conquistaste la Cumbre Root. CorpX ha sido derrotada, tus Hackémon están a salvo y el profesor promete no volver a decir “¿probaste reiniciar?”. Bueno… no lo promete.'
+ }
+};
+function drawBriefingMascot(now){const canvas=$('#briefing-mascot');if(!canvas||!briefingMascot)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,t=now-briefingT0,x=reduced?w/2:w/2+Math.sin(t/430)*13,y=reduced?55:55+Math.sin(t/190)*5;
+ ctx.fillStyle='rgba(0,0,0,.24)';ctx.beginPath();ctx.ellipse(x,h-19,17,5,0,0,Math.PI*2);ctx.fill();
+ if(!reduced){for(let i=0;i<3;i++){const a=t/520+i*Math.PI*2/3,px=x+Math.cos(a)*27,py=y+Math.sin(a)*20;ctx.fillStyle=i%2?'#ffe566':'#fff';ctx.fillRect(Math.round(px),Math.round(py),3,3)}}
+ ctx.drawImage(mk(briefingMascot),Math.round(x-21),Math.round(y-21),42,42)}
+function openZoneBriefing(zone,mascot){briefingZone=zone;briefingMascot=mascot||R.find(r=>r.zona===zone);briefingT0=performance.now();const text=ZONE_BRIEFINGS[zone];
+ mode='zone-briefing';$('#zone-briefing').hidden=false;$('#menu-toggle').style.display='none';
+ $('#zone-briefing-title').textContent=PLAYER?`¡Felicidades, ${PLAYER}!`:'¡Felicidades, entrenador!';
+ $('#zone-briefing-kicker').textContent=zone===3?'Liga Hackémon completada · 12/12 retos':`${ZN[zone]} · ${nz(zone)}/${R.filter(r=>r.zona===zone).length} retos`;
+ $('#zone-briefing-medal').src=medalImg(zone).toDataURL();$('#zone-briefing-medal-name').textContent=MED[zone];
+ $('#briefing-story-text').textContent=text.story;
+ const stats=$('#briefing-final-stats');stats.hidden=zone!==3;
+ if(zone===3){const hints=Object.values(S.hints||{}).reduce((sum,count)=>sum+count,0),elapsed=Math.floor((Date.now()-(S.t0||Date.now()))/1000);stats.textContent=`Puntuación: ${score()} pts · Medallas: ${mcount()}/3 · Pistas usadas: ${hints} · Tiempo: ${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;$('#zone-briefing-continue').textContent='¡Seguir explorando!'}
+ else $('#zone-briefing-continue').textContent='¡Listo para la siguiente zona!';
+ drawBriefingMascot(performance.now());$('#zone-briefing-continue').focus();window.HackemonMusic.sfx.caught?.()}
+function closeZoneBriefing(){S[`briefingZ${briefingZone}`]=Date.now();persist();$('#zone-briefing').hidden=true;mode='map';$('#menu-toggle').style.display='block';burst(P.x+8,P.y+8,ZC[briefingZone],40);toast(`¡${MED[briefingZone]} conseguida${(S.pure||{})[briefingZone]?' · sin pistas':''}! Completaste ${ZN[briefingZone]} · [I] inventario`,6000)}
 function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';window.HackemonMusic.setScene('world');
- const medalEarned=pendingMedal,capturedName=captureResult?.criatura;pendingMedal=null;captureResult=null;
- if(medalEarned===1&&!S.briefingZ1){openZone1Briefing();return}
+ const medalEarned=pendingMedal,capturedCreature=captureResult,capturedName=captureResult?.criatura;pendingMedal=null;captureResult=null;
+ if((medalEarned===1||medalEarned===2||medalEarned===3&&total()===12)&&!S[`briefingZ${medalEarned}`]){openZoneBriefing(medalEarned,capturedCreature);return}
  mode='map';$('#menu-toggle').style.display='block';
  if(medalEarned){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[medalEarned],40);toast(`¡${MED[medalEarned]} conseguida${(S.pure||{})[medalEarned]?' · sin pistas':''}! Completaste ${ZN[medalEarned]} · [I] inventario`,6000)}
  else if(capturedName)toast(`¡Capturaste a ${capturedName}! (${total()}/12) · [I] inventario`,4000);
  if(total()===12){const hh=Object.values(S.hints||{}).reduce((a,b)=>a+b,0),s=Math.floor((Date.now()-(S.t0||Date.now()))/1000);
   $('#liga-stats').innerHTML=`Puntuación: <b>${score()} pts</b> · Medallas: ${mcount()}/3 · Pistas usadas: ${hh} · Tiempo: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-  const cn=NPCS.find(n=>n.draw==='clown'),cp=npcPos(cn),_px=Math.round(P.x/16),_py=Math.round(P.y/16);clownWalk={px:cp.x*16,py:cp.y*16,tx:cp.x,ty:cp.y,mv:0,gx:_px+1,gy:_py};toast('*Se escuchan pasos de zapatos rojos acercándose...*',4000);return}}
+  $('#liga').style.display='grid';mode='liga';$('#liga-continue').focus()}}
 function build(){
  for(let y=0;y<H;y++){T[y]=[];for(let x=0;x<W;x++){const n=hs(x,y),z3=x>=33;let v=z3?5:0;
   if(x===0||y===0||x===W-1||y===H-1)v=z3?6:2;else if([15,16,31,32].includes(x))v=3;
@@ -236,8 +256,17 @@ const GQ=[
  (zn,n,who)=>`Guardia: Este puente tiene firewall y soy yo. Regla única: las 4 criaturas de ${zn}. Llevas ${n}/4, ${who}. Sí, sé contar.`,
  (zn,n,who)=>`Guardia: Acceso denegado, ${who}. Ni con sudo pasas. Captura las 4 criaturas de ${zn} (llevas ${n}/4) y hablamos.`,
  (zn,n,who)=>`Guardia: Otra vez tú, ${who}. Insistir no es un exploit válido. Te faltan ${4-n} criaturas de ${zn}.`];
-let lastGQ=-1;
-function guardTalk(d){if(tm-lastT<=90)return;lastT=tm;const z=d.z-1;if(unl(d.z)){toast(ADMIN&&nz(z)<4?`Guardia: Sí, señor administrador. Pase usted, no vaya a ser que me cambie la contraseña.`:`Guardia: ¡Bien hecho, ${PLAYER}! Puedes cruzar hacia ${ZN[d.z]}.`,7000);return}
+const ADMIN_GQ=[
+ (zn,n,who,medals,captures)=>`Guardia: ¡${who}! El pase de administrador para ${zn} está aprobado. No es favoritismo; es miedo a que me reinicies.`,
+ (zn,n,who,medals,captures)=>`Guardia: Puedes pasar a ${zn}, ${who}. Veo que ${n}/4 Hackémon ya están registrados; el resto puede seguir fingiendo que no te vio.`,
+ (zn,n,who,medals,captures)=>`Guardia: Acceso autorizado por ADMIN. ${who}, tu auditoría está en ${medals}/3 medallas y ${captures}/12 capturas. No pongas eso en mi evaluación.`,
+ (zn,n,who,medals,captures)=>`Guardia: Adelante hacia ${zn}. El protocolo dice “verificar permisos”; el mío dice “no discutir con quien puede cambiar la configuración”.`,
+ (zn,n,who,medals,captures)=>`Guardia: Credenciales de administrador confirmadas, ${who}. Yo vigilo la puerta y tú vigilas que no se caiga el servidor. Trato hecho.`,
+ (zn,n,who,medals,captures)=>`Guardia: Pase a ${zn}, ${who}. Con ${captures} Hackémon capturados ya tienes más equipo que yo personal de seguridad.`
+];
+let lastGQ=-1,lastAdminGQ=-1;
+function guardTalk(d){if(tm-lastT<=90)return;lastT=tm;const z=d.z-1;if(unl(d.z)){if(ADMIN){let i;do i=Math.floor(Math.random()*ADMIN_GQ.length);while(i===lastAdminGQ&&ADMIN_GQ.length>1);lastAdminGQ=i;toast(ADMIN_GQ[i](ZN[d.z],nz(z),PLAYER,mcount(),total()),7000)}
+ else toast(`Guardia: ¡Bien hecho, ${PLAYER}! Puedes cruzar hacia ${ZN[d.z]}.`,7000);return}
  window.HackemonMusic.sfx.guardDenied();
  let i;do i=Math.floor(Math.random()*GQ.length);while(i===lastGQ);lastGQ=i;toast(GQ[i](ZN[z],nz(z),PLAYER),8000)}
 function guard(x,y,open){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
@@ -318,16 +347,56 @@ const HACKER_LINES=[
  'El port knocking es un saludo secreto: golpea los puertos en el orden correcto.',
  'Las cabeceras HTTP hablan. curl -i y escucha.',
  'En mi época el root se ganaba con paciencia, no con pistas.'];
+const NPC_MINIGAMES={
+ detective:{title:'Ojo de detective',kicker:'Niña detective · 3 hallazgos rápidos',rewardZone:1,rewardPoints:15,questions:[
+  {prompt:'¿Dónde revisarías un comentario oculto en una imagen?',choices:['En sus metadatos','En el volumen del parlante','En la papelera'],answer:'En sus metadatos'},
+  {prompt:'¿Qué herramienta sirve para consultar registros DNS?',choices:['nslookup','La caña de pescar','Un cronómetro'],answer:'nslookup'},
+  {prompt:'¡Caso relámpago! ¿Qué herramienta ayuda a leer metadatos?',choices:['exiftool','ping','calculadora'],answer:'exiftool'}
+ ]},
+ fisherman:{title:'Pesca el paquete',kicker:'Viejo pescador · 3 capturas rápidas',rewardZone:2,rewardPoints:20,questions:[
+  {prompt:'¿Qué opción de Nmap descubre hosts sin escanear puertos?',choices:['-sn','-sV','-p 80'],answer:'-sn'},
+  {prompt:'¿Qué puerto revisas para encontrar el Apache del reto?',choices:['80','7','65000'],answer:'80'},
+  {prompt:'SNMP suele viajar por…',choices:['UDP','SMTP','Bluetooth'],answer:'UDP'}
+ ]},
+ retired:{title:'Plan de hacker retirado',kicker:'Hacker retirado · 3 decisiones rápidas',rewardZone:3,rewardPoints:25,questions:[
+  {prompt:'Para encontrar directorios web, ¿qué herramienta va primero?',choices:['gobuster','base32','la caña'],answer:'gobuster'},
+  {prompt:'La captura muestra golpes a varios puertos. ¿Qué debes anotar?',choices:['El orden de los puertos','El color del cable','La hora del almuerzo'],answer:'El orden de los puertos'},
+  {prompt:'Antes de probar el servicio oculto, lo más sensato es…',choices:['Revisar la captura y ordenar la secuencia','Adivinar a gritos','Escanear todo Internet'],answer:'Revisar la captura y ordenar la secuencia'}
+ ]}
+};
 const CLOWN_LINES=[
  'El sufrimiento de los estudiantes me mantiene joven jajajaja'];
 const NPCS=[
- {x:6,y0:14,y1:24,who:'Niña detective',lines:GIRL_LINES,draw:'girl',last:-1},
- {x:17,y0:12,y1:26,who:'Viejo pescador',lines:FISH_LINES,draw:'fisher',last:-1},
- {x:40,y0:12,y1:26,who:'Hacker retirado',lines:HACKER_LINES,draw:'hacker',last:-1},
+ {x:6,y0:14,y1:24,who:'Niña detective',lines:GIRL_LINES,draw:'girl',game:'detective',last:-1},
+ {x:17,y0:12,y1:26,who:'Viejo pescador',lines:FISH_LINES,draw:'fisher',game:'fisherman',last:-1},
+ {x:40,y0:12,y1:26,who:'Hacker retirado',lines:HACKER_LINES,draw:'hacker',game:'retired',last:-1},
  {x:46,y0:12,y1:26,who:'El Payaso Ops',lines:CLOWN_LINES,draw:'clown',last:-1}];
 const npcPos=n=>{for(let y=n.y0;y<n.y1;y++)if(T[y]&&(T[y][n.x]===0||T[y][n.x]===5))return{x:n.x,y};return{x:n.x,y:n.y0}};
 let lastNPC=0;
+function renderNpcMinigame(feedback=''){if(!activeNpcGame)return;const game=activeNpcGame.config,complete=activeNpcGame.index>=game.questions.length;
+ $('#npc-game-kicker').textContent=game.kicker;$('#npc-game-title').textContent=game.title;$('#npc-game-prize').textContent=`+${game.rewardPoints} PTS`;
+ $('#npc-game-progress').textContent=complete?'¡Reto superado!':`Pregunta ${activeNpcGame.index+1} de ${game.questions.length}`;
+ $('#npc-game-track-fill').style.width=`${Math.min(100,activeNpcGame.index/game.questions.length*100)}%`;
+ const prompt=$('#npc-game-prompt'),choices=$('#npc-game-choices'),status=$('#npc-game-feedback');status.className='npc-game-feedback';status.textContent=feedback;
+ if(complete){$('#npc-game-track-fill').style.width='100%';prompt.textContent=`¡Ronda perfecta! Te llevas ${game.rewardPoints} puntos extra. ${activeNpcGame.npc.who} confirma que esta vez sí lo lograste.`;
+  choices.innerHTML='<button class="npc-game-choice npc-game-choice--success" id="npc-game-close" type="button">¡Cobrar mis puntos!</button>';
+  $('#npc-game-close').onclick=closeNpcMinigame;$('#npc-game-close').focus();return}
+ const q=game.questions[activeNpcGame.index];prompt.textContent=q.prompt;
+ const options=q.choices.map(label=>({label,correct:label===q.answer})).sort(()=>Math.random()-.5);
+ choices.innerHTML=options.map((option,i)=>`<button class="npc-game-choice" type="button" data-correct="${option.correct}">${esc(option.label)}</button>`).join('');
+ choices.querySelectorAll('button').forEach(button=>button.onclick=()=>{if(button.dataset.correct==='true'){activeNpcGame.index++;
+   if(activeNpcGame.index===game.questions.length){S.minigames[activeNpcGame.npc.game]=Date.now();persist()}
+   renderNpcMinigame(['¡Zas! Dato a la canasta.','¡Buena pesca!','¡El profesor finge que no está impresionado!'][Math.floor(Math.random()*3)])}
+  else{status.textContent=['¡Ese dato se escapó! Prueba otra vez.','Casi… el paquete correcto está en otra caña.','¡Pescaste una bota! Inténtalo de nuevo.'][Math.floor(Math.random()*3)];status.classList.add('bad')}});
+ choices.querySelector('button').focus()}
+function startNpcMinigame(n){const config=NPC_MINIGAMES[n.game];if(!config||S.minigames[n.game])return false;
+ activeNpcGame={npc:n,config,index:0};mode='npc-minigame';keys={};$('#menu-toggle').style.display='none';$('#npc-minigame').hidden=false;renderNpcMinigame(`¡Tres aciertos y ganas ${config.rewardPoints} puntos!`);return true}
+function closeNpcMinigame(){if(!activeNpcGame)return;const won=activeNpcGame.index>=activeNpcGame.config.questions.length,zone=activeNpcGame.config.rewardZone,id=activeNpcGame.npc.game,points=activeNpcGame.config.rewardPoints;
+ if(won&&!S.minigames[id]){S.minigames[id]=Date.now();persist()}
+ activeNpcGame=null;$('#npc-minigame').hidden=true;mode='map';keys={};$('#menu-toggle').style.display='block';$('#c').focus();
+ if(won)toast(`¡+${points} puntos! Minijuego de ${ZN[zone]} completado.`,6000)}
 function npcTalk(n){if(mode!=='map'||tm-lastNPC<=90)return;lastNPC=tm;
+ if(n.game&&!S.minigames[n.game]&&startNpcMinigame(n))return;
  let i;do i=Math.floor(Math.random()*n.lines.length);while(i===n.last&&n.lines.length>1);n.last=i;
  showDialog(n.who,[n.lines[i]],null)}
 function fisher(x,y){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
@@ -401,19 +470,21 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<195){const ph=(k-105)%30;ball(cx,gy,6,ph<20?Math.sin(ph/20*Math.PI*2)*.5:0,zc)}
   else if(k<235){ball(cx,gy,6,0,zc);drawFX(0,0);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
-function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
+function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none';if(mode==='map')$('#c').focus()}
 function openInv(){mode='inv';const v=$('#inv');
  const medals=[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}">${(S.pure||{})[z]?`<img class=pur src="${pureImg().toDataURL()}" title="Zona sin pistas">`:''}<img src="${medalImg(z).toDataURL()}" alt=""><small>${(S.medals||{})[z]?esc(MED[z]):'???'}</small></div>`).join('');
  const cards=R.map(r=>{const got=S.cap[r.id];
- return `<div class="card ${got?'':'off'}"><img src="${got?challengeLogo(r):sil(r).toDataURL()}" alt=""><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revHints(r)?' (-'+revHints(r)*15+' pistas)':''}</small>`:''}</div>`}).join('');
- v.innerHTML=`<article class="inv-screen trainer-ui"><header class="trainer-head"><p class="eyebrow">Registro del entrenador</p><h2>Hackédex · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small></header><div class="trainer-stat-grid inv-stat-grid" aria-label="Resumen"><div class="trainer-stat-card trainer-stat-card--1"><span class="trainer-stat-value">${total()}/12</span><span class="trainer-stat-label">Capturados</span></div><div class="trainer-stat-card trainer-stat-card--2"><span class="trainer-stat-value">${mcount()}/3</span><span class="trainer-stat-label">Medallas</span></div><div class="trainer-stat-card trainer-stat-card--3"><span class="trainer-stat-value">${score()}</span><span class="trainer-stat-label">Puntos</span></div></div><section class="trainer-block" aria-labelledby="inv-medals-label"><h3 id="inv-medals-label" class="trainer-section-label">Gimnasios y medallas</h3><div class="medals">${medals}</div></section><section class="trainer-block" aria-labelledby="inv-dex-label"><h3 id="inv-dex-label" class="trainer-section-label">Criaturas registradas</h3><div class="grid">${cards}</div></section><footer class="trainer-foot"><button type="button" onclick="closeAll()">Cerrar (Esc)</button></footer></article>`;v.style.display='block'}
+ return `<div class="card ${got?'':'off'}"><img src="${got?challengeLogo(r):sil(r).toDataURL()}" alt=""><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revPaidHints(r)?` (-${revPaidHints(r)*15} pts por pistas)`:''}</small>`:''}</div>`}).join('');
+ v.innerHTML=`<article class="inv-screen trainer-ui"><header class="trainer-head"><p class="eyebrow">Registro del entrenador</p><h2>Hackédex · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small></header><div class="trainer-stat-grid inv-stat-grid" aria-label="Resumen"><div class="trainer-stat-card trainer-stat-card--1"><span class="trainer-stat-value">${total()}/12</span><span class="trainer-stat-label">Capturados</span></div><div class="trainer-stat-card trainer-stat-card--2"><span class="trainer-stat-value">${mcount()}/3</span><span class="trainer-stat-label">Medallas</span></div><div class="trainer-stat-card trainer-stat-card--3"><span class="trainer-stat-value">${score()}</span><span class="trainer-stat-label">Puntos</span></div></div><section class="trainer-block" aria-labelledby="inv-medals-label"><h3 id="inv-medals-label" class="trainer-section-label">Gimnasios y medallas</h3><div class="medals">${medals}</div></section><section class="trainer-block" aria-labelledby="inv-dex-label"><h3 id="inv-dex-label" class="trainer-section-label">Criaturas registradas</h3><div class="grid">${cards}</div></section><footer class="trainer-foot"><button type="button" onclick="closeAll()">Cerrar (Esc)</button></footer></article>`;v.style.display='block';v.querySelector('.trainer-foot button').focus()}
 function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=revHints(r);const p=$('#panel'),pistas=Array.isArray(r.pistas)?r.pistas:[],adminAnswer=ADMIN&&ADMIN[r.id]?String(ADMIN[r.id]).replace(/^CORPX\{(.*)\}$/i,'$1'):'';
  const dl=r.descarga?challengeDl(r.descarga,'Archivo del reto','Descarga el archivo en tu equipo antes de resolver el reto'):'',foca=r.herramienta_descarga?challengeDl(r.herramienta_descarga,'FOCA (.zip)','Descarga y ejecuta FOCA para revisar metadatos'):'',dls=dl||foca?`<div class="challenge-downloads" aria-label="Descargas">${dl}${foca}</div>`:'',pen=revHints(r)*15;
+ const hintButtonLabel=`Pista ${h}/${pistas.length}${pen?` · -${pen}pts`:''}`;
  const hintInit=h>0?`<section id="ph" class="challenge-hints" aria-live="polite">${challengeHintHtml(pistas,h)}</section>`:'<section id="ph" class="challenge-hints" hidden aria-live="polite"></section>';
- p.innerHTML=`<article class="challenge-panel" data-zone="${r.zona}"><header class="challenge-head"><div class="challenge-logo-wrap"><img class="challenge-logo" width="56" height="56" src="${challengeLogo(r)}" alt="Hackémon ${esc(r.criatura)}"><span class="challenge-species">${esc(r.criatura)}</span></div><div class="challenge-titles"><span class="challenge-wild">¡Reto salvaje!</span><h2>${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · ${esc(r.tipo)}</small></div></header><section class="challenge-body"><section class="challenge-mission challenge-textbox" aria-label="Descripción del reto"><span class="challenge-mission-tag">Misión</span><p class="challenge-brief">${esc(r.brief)}</p><p class="challenge-objective"><b>Objetivo</b> <code>${esc(r.objetivo)}</code></p></section>${dls?`<div class="challenge-ribbon">${dls}</div>`:''}<div class="challenge-body-scroll"><p class="challenge-tools">${r.tools.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</p><p class="challenge-eth">${esc(r.etica)}</p>${ADMIN?`<div class="admin-box challenge-admin"><span>Admin</span><code>${esc(adminAnswer)}</code><button type="button" class="challenge-btn challenge-btn-ghost" id="admin-skip">Saltar</button></div>`:''}${hintInit}</div></section><footer class="challenge-dock">${r.tipo==='Upload Web'?'<div class="challenge-upload"><input type="file" id="fu" accept=".txt" class="challenge-upload-input"><button type="button" id="bu" class="challenge-btn challenge-btn-primary">Subir</button></div><p id="ur" class="challenge-result" role="status"></p>':''}<div class="challenge-commands">${Array.isArray(r.pistas)?`<button type="button" id="bh" class="challenge-btn challenge-btn-ghost" ${pistas.length?'':'disabled'}>Pista ${h}/${pistas.length}${pen?` · -${pen}pts`:''}</button>`:'<span class="challenge-no-hints">Sin pistas</span>'}<div class="challenge-submit"><input id="fl" placeholder="Escriba la bandera…" autocomplete="off" aria-label="Escriba la bandera"><button type="button" id="bv" class="challenge-btn challenge-btn-primary">Validar</button></div><button type="button" class="challenge-btn challenge-btn-ghost challenge-close" onclick="closeAll()">Mapa</button></div><p id="rs" class="challenge-result" role="status"></p></footer></article>`;
+ p.innerHTML=`<article class="challenge-panel" data-zone="${r.zona}"><header class="challenge-head"><div class="challenge-logo-wrap"><img class="challenge-logo" width="56" height="56" src="${challengeLogo(r)}" alt="Hackémon ${esc(r.criatura)}"><span class="challenge-species">${esc(r.criatura)}</span></div><div class="challenge-titles"><span class="challenge-wild">¡Reto salvaje!</span><h2>${esc(r.titulo)}</h2><small>Zona ${r.zona} · ${esc(ZN[r.zona])} · ${esc(r.tipo)}</small></div></header><section class="challenge-body"><section class="challenge-mission challenge-textbox" aria-label="Descripción del reto"><span class="challenge-mission-tag">Misión</span><p class="challenge-brief">${esc(r.brief)}</p><p class="challenge-objective"><b>Objetivo</b> <code>${esc(r.objetivo)}</code></p></section>${dls?`<div class="challenge-ribbon">${dls}</div>`:''}<div class="challenge-body-scroll"><p class="challenge-tools">${r.tools.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</p><p class="challenge-eth">${esc(r.etica)}</p>${ADMIN?`<div class="admin-box challenge-admin"><span>Admin</span><code>${esc(adminAnswer)}</code><button type="button" class="challenge-btn challenge-btn-ghost" id="admin-skip">Saltar</button></div>`:''}${hintInit}</div></section><footer class="challenge-dock">${r.tipo==='Upload Web'?'<div class="challenge-upload"><input type="file" id="fu" accept=".txt" class="challenge-upload-input"><button type="button" id="bu" class="challenge-btn challenge-btn-primary">Subir</button></div><p id="ur" class="challenge-result" role="status"></p>':''}<div class="challenge-commands">${Array.isArray(r.pistas)?`<button type="button" id="bh" class="challenge-btn challenge-btn-ghost" ${pistas.length?'':'disabled'}>${hintButtonLabel}</button>`:'<span class="challenge-no-hints">Sin pistas</span>'}<div class="challenge-submit"><input id="fl" placeholder="Escriba la bandera…" autocomplete="off" aria-label="Escriba la bandera"><button type="button" id="bv" class="challenge-btn challenge-btn-primary">Validar</button></div><button type="button" class="challenge-btn challenge-btn-ghost challenge-close" onclick="closeAll()">Mapa</button></div><p id="rs" class="challenge-result" role="status"></p></footer></article>`;
  p.style.display='grid';$('#fl').focus();
  if(ADMIN)$('#admin-skip').onclick=()=>captureSuccess(r,'Modo admin: reto saltado. Lanzando cápsula…');
- if(pistas.length)$('#bh').onclick=()=>{if(h<pistas.length){const box=$('#ph');box.hidden=false;box.insertAdjacentHTML('beforeend',`<p class="challenge-hint-line"><b>Pista ${h+1}:</b> ${esc(pistas[h])}</p>`);h++;if(typeof S.hints[r.id]!=='number'||h>S.hints[r.id])S.hints[r.id]=h;persist();const pen=revHints(r)*15;$('#bh').textContent=`Pista ${h}/${pistas.length}`+(pen?` (-${pen} pts)`:'');$('#bh').disabled=h>=pistas.length}};
+ if(pistas.length)$('#bh').onclick=()=>{if(h<pistas.length){const box=$('#ph');box.hidden=false;box.insertAdjacentHTML('beforeend',`<p class="challenge-hint-line"><b>Pista ${h+1}:</b> ${esc(pistas[h])}</p>`);
+  h++;S.hints[r.id]=h;persist();$('#bh').textContent=`Pista ${h}/${pistas.length} · -${h*15}pts`;$('#bh').disabled=h>=pistas.length}};
  $('#bv').onclick=async()=>{const v=$('#fl').value.trim(),o=$('#rs');if(!v){o.className='challenge-result bad';o.textContent='Escribe una bandera primero.';return}
   try{const m=v.match(/^corpx\{(.+)\}$/i),inner=m?m[1]:v;const submittedFlag=r.plain?v:`CORPX{${inner}}`;const res=await fetch('/api/validar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:r.id,flag:submittedFlag})}),d=await res.json();
    if(d.ok)captureSuccess(r,'¡Bandera correcta! Lanzando cápsula de captura…');
@@ -421,10 +492,14 @@ function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h
   catch(e){o.className='challenge-result bad';o.textContent='No se pudo contactar al servidor.'}}
  if(r.tipo==='Upload Web')$('#bu').onclick=async()=>{const fi=$('#fu').files[0],o=$('#ur');if(!fi){o.className='challenge-result bad';o.textContent='Selecciona un archivo .txt primero.';return}const fd=new FormData();fd.append('archivo',fi);try{const res=await fetch('/api/upload-reto9',{method:'POST',body:fd}),d=await res.json();if(d.ok){o.className='challenge-result ok';o.innerHTML=`¡Acceso concedido! Bandera en: <a href="${d.url}" target="_blank" rel="noopener">${d.url}</a>`}else{o.className='challenge-result bad';o.textContent=d.msg||'Acceso denegado.'}}catch(e){o.className='challenge-result bad';o.textContent='Error al subir el archivo.'}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter'].includes(k)){e.preventDefault();nextDialog()}return}
- if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if([' ','enter'].includes(k)){e.preventDefault();closeGameConfirm(true);return}return}
- if(mode==='zone-briefing'){if([' ','enter'].includes(k)){e.preventDefault();closeZone1Briefing();return}return}
+ if(mode==='npc-minigame'){if(k==='escape'){e.preventDefault();closeNpcMinigame()}return}
+ if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if(k==='enter'){e.preventDefault();closeGameConfirm(true);return}if(k===' '&&e.target.closest('#confirm-yes,#confirm-no'))return;if(k===' '){e.preventDefault();closeGameConfirm(true);return}return}
+ if(mode==='zone-briefing'){if([' ','enter'].includes(k)){e.preventDefault();closeZoneBriefing();return}return}
+ if(mode==='capture-result'){if([' ','enter'].includes(k)){e.preventDefault();continueAfterCapture();return}return}
+ if(mode==='liga'){if([' ','enter'].includes(k)){e.preventDefault();$('#liga-continue').click();return}return}
  if(mode==='login'){if(e.key==='Escape'){$('#login').style.display='none';mode='start'}return}if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
+ if([' ','enter'].includes(k)&&e.target.closest('button,a,[role="button"]'))return;
  if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
  if(k==='m'){if(mode==='menu')closeMenu();else openMenu();return}keys[k]=1;
  if(mode==='map'){if([' ','enter'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k==='n'){S.mini=S.mini===false;persist()}else if(k.startsWith('arrow'))e.preventDefault()}
@@ -432,12 +507,12 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){i
 addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);addEventListener('blur',()=>keys={});
 //audio
 
-function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result','confirm','zone-briefing'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(mode==='zone-briefing')drawBriefingMascot(performance.now());else if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
+function loop(){tm++;$('#hud').hidden=['start','login','enc','capture-result','confirm','zone-briefing','npc-minigame'].includes(mode);$('#mini').hidden=mode!=='map'||S.mini===false;$('#controls-footer').hidden=mode==='start'||mode==='panel'||mode==='npc-minigame';document.body.classList.toggle('intro-active',mode==='start');document.body.classList.toggle('panel-active',mode==='panel');if(mode==='zone-briefing')drawBriefingMascot(performance.now());else if(['map','start','login','dialog'].includes(mode)){if(mode==='map')update();drawMap();if(mode==='start')drawStartAmbience(performance.now())}else if(mode==='enc'&&A)enc();requestAnimationFrame(loop)}
 updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
 $('#capture-continue').onclick=continueAfterCapture;
-$('#zone-briefing-continue').onclick=closeZone1Briefing;
+$('#zone-briefing-continue').onclick=closeZoneBriefing;
 $('#liga-continue').onclick=()=>{$('#liga').style.display='none';mode='map'};
 $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
