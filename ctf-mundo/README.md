@@ -19,6 +19,14 @@ Controles: **flechas / WASD** mover · **Espacio** abrir una cápsula/reto ·
 **I** inventario · **Esc** cerrar. Para pasar de zona hay que capturar 3
 criaturas de la zona anterior (un guardia bloquea el puente).
 
+## Retos de red locales (5 y 6)
+
+Realiza estos ejercicios únicamente en máquinas virtuales propias o autorizadas,
+conectadas a una red **Host-Only** aislada. El reto 5 descubre hosts del segmento
+`192.168.56.0/24`; el reto 6 identifica Apache en el puerto 80 de la IP objetivo
+que encontraste, usando `sudo nmap -sS -sV -p 80 <IP_OBJETIVO>`. No ejecutes
+estos escaneos contra redes públicas o equipos ajenos.
+
 ## Editar y ver los cambios
 
 - **El juego** está dividido por responsabilidad en `app/static/`:

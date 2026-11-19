@@ -3,7 +3,7 @@ from collections import defaultdict, deque
 from flask import Flask, jsonify, request, send_from_directory, make_response
 from markupsafe import escape
 from waitress import serve
-from retos import RETOS, F
+from retos import ALTERNATIVE_FLAGS, RETOS, F
 B = os.path.dirname(os.path.abspath(__file__))
 PUB = [{k: v for k, v in r.items() if k != "flag"} for r in RETOS]
 game = Flask(__name__, static_folder=os.path.join(B, "static"), static_url_path="")
@@ -35,8 +35,11 @@ def validar():
     q = tries[request.remote_addr]; now = time.time()
     while q and now - q[0] > 60: q.popleft()
     if len(q) >= 8: return jsonify(ok=False, error="limite"), 429
-    q.append(now); d = request.get_json(silent=True) or {}; f = F.get(d.get("id"))
-    return jsonify(ok=bool(f) and hmac.compare_digest(str(d.get("flag", "")).strip().encode(), f.encode()))
+    q.append(now); d = request.get_json(silent=True) or {}; challenge_id = d.get("id"); f = F.get(challenge_id)
+    submitted = str(d.get("flag", "")).strip().lower()
+    answers = ([f] if f else []) + list(ALTERNATIVE_FLAGS.get(challenge_id, ()))
+    ok = any(hmac.compare_digest(submitted.encode(), answer.lower().encode()) for answer in answers)
+    return jsonify(ok=ok)
 @game.get("/descargas/<path:n>")
 def desc(n): return send_from_directory(os.path.join(B, "artefactos"), n, as_attachment=True)
 

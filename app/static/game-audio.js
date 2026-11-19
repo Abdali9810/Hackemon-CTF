@@ -54,6 +54,8 @@
   let zone = 1;
   let menuIndex = 0;
   let track = menuTracks[menuIndex];
+  let guardDuckTimer = null;
+  let guardDuckLevel = 1;
   let ambient = false;
   let birdTimer = null;
 
@@ -316,6 +318,23 @@
         playNote(midi(n), s, d * 0.11, 'square', 0.1, sfxBus);
         playNote(midi(n - 12), s, d * 0.11, 'triangle', 0.12, sfxBus);
       });
+    },
+    guardDenied() {
+      if (!ready()) return;
+      const t = context.currentTime;
+      guardDuckLevel = 0.22;
+      musicBus.gain.cancelScheduledValues(t);
+      musicBus.gain.setTargetAtTime(volumes.music * MUSIC_MAX * guardDuckLevel, t, 0.025);
+      window.clearTimeout(guardDuckTimer);
+      guardDuckTimer = window.setTimeout(() => {
+        guardDuckLevel = 1;
+        if (!context) return;
+        const now = context.currentTime;
+        musicBus.gain.cancelScheduledValues(now);
+        musicBus.gain.setTargetAtTime(volumes.music * MUSIC_MAX, now, 0.14);
+      }, 1100);
+      playNote(392, t, 0.16, 'triangle', 0.3, sfxBus);
+      playNote(262, t + 0.19, 0.24, 'triangle', 0.34, sfxBus);
     }
   };
 
@@ -325,7 +344,8 @@
     if (!context) return;
     const bus = kind === 'music' ? musicBus : sfxBus;
     const max = kind === 'music' ? MUSIC_MAX : SFX_MAX;
-    bus.gain.setTargetAtTime(volumes[kind] * max, context.currentTime, 0.05);
+    const duck = kind === 'music' ? guardDuckLevel : 1;
+    bus.gain.setTargetAtTime(volumes[kind] * max * duck, context.currentTime, 0.05);
   }
 
   window.HackemonMusic = {

@@ -30,14 +30,6 @@ pi = PngInfo(); pi.add_text("Author", "Hackémon"); pi.add_text("Comment", F[1].
 im.save(os.path.join(O, "reto01_foca.png"), pnginfo=pi)
 # 4 hash
 open(os.path.join(O, "reto04_hash.txt"), "w").write(hashlib.md5(b"sunshine").hexdigest() + "\n")
-# 5 http
-body = f"usuario=admin&clave={F[5]}".encode()
-p1, t = sess(A, B, 40001, 80, [(True, b"GET / HTTP/1.1\r\nHost: intranet.hackemon.lab\r\n\r\n"), (False, b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK")], 1.7e9)
-p2, t = sess(A, B, 40002, 80, [(True, b"POST /login HTTP/1.1\r\nHost: intranet.hackemon.lab\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n\r\n" % len(body) + body), (False, b"HTTP/1.1 302 Found\r\nLocation: /panel\r\n\r\n")], t)
-w("reto05_http.pcap", p1 + p2)
-# 6 ftp
-m = [(False, b"220 Hackemon FTP\r\n"), (True, b"USER agente\r\n"), (False, b"331 Password required\r\n"), (True, b"PASS " + F[6].encode() + b"\r\n"), (False, b"230 Login ok\r\n"), (True, b"QUIT\r\n"), (False, b"221 Bye\r\n")]
-w("reto06_ftp.pcap", sess(A, B, 40010, 21, m, 1.7e9)[0])
 # 7 dns
 b32 = base64.b32encode(F[7].encode()).decode().rstrip("="); ch = [b32[i:i + 12] for i in range(0, len(b32), 12)]
 names = ["www.google.com", "hackemon.lab"] + [f"{i}-{c}.datos.hackemon.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]
