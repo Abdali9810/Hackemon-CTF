@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
-const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#58b848','#2f9fb0','#d0703c'];
+const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#00c8d4','#e06010','#6020c0'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
 let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0;
 let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0;
