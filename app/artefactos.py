@@ -58,4 +58,31 @@ upload_txt = ("# ===========================================================\n"
               "# podrian alterar la logica de verificacion.\n"
               "# -------------------------------------------\n")
 open(os.path.join(O, "reto09_upload.txt"), "w", encoding="utf-8").write(upload_txt)
+# 9 archivo de configuracion interno expuesto por la inyeccion
+config_interno = ("# ===========================================================\n"
+                  "# CORPX - Configuracion de Acceso Interno\n"
+                  "# CLASIFICACION: CONFIDENCIAL\n"
+                  "# Version: 2.1.0  |  Ultima modificacion: 2024-11-07\n"
+                  "# ===========================================================\n"
+                  "DB_HOST=db-internal.corpx.lab\n"
+                  "DB_PORT=5432\n"
+                  "DB_USER=corpx_admin\n"
+                  f"AUTH_FLAG={F[9]}\n"
+                  "SESSION_TIMEOUT=1800\n"
+                  "DEBUG=false\n"
+                  "# ===========================================================\n")
+open(os.path.join(O, "reto09_config_interno.txt"), "w", encoding="utf-8").write(config_interno)
+# 11 archivo clasificado - accesible solo con el token de API descubierto via SQL injection en reto 10
+sellado_txt = ("# ===========================================================\n"
+               "# CORPX - Archivo Clasificado de Administracion\n"
+               "# ACCESO: RESTRINGIDO - Solo operativos con token valido\n"
+               "# ===========================================================\n"
+               "SISTEMA=corpx-intranet\n"
+               "NIVEL_ACCESO=ALTO\n"
+               f"FLAG_SISTEMA={F[11]}\n"
+               "FECHA_EXPIRACION=2025-12-31\n"
+               "# ===========================================================\n")
+open(os.path.join(O, "reto11_sellado.txt"), "w", encoding="utf-8").write(sellado_txt)
+# 12 archivo de bandera para el servidor SSH (colocar como ~/.flag en 192.168.56.105)
+open(os.path.join(O, "reto12_dotflag.txt"), "w", encoding="utf-8").write(F[12] + "\n")
 print("artefactos listos:", sorted(os.listdir(O)))
