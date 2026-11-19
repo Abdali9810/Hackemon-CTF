@@ -705,6 +705,7 @@ function openChallenge(challenge) {
     <p>${escapeHtml(challenge.brief)}</p>
     <p><b>Objetivo:</b> <code>${escapeHtml(challenge.objetivo)}</code></p>
     ${challenge.descarga ? `<p><a class="download" href="${escapeHtml(challenge.descarga)}" download>Descargar archivo del reto</a></p>` : ''}
+    ${challenge.tipo === 'Upload Web' ? `<p><input type="file" id="fu" accept=".txt"> <button id="bu">Subir archivo modificado</button></p><p id="ur"></p>` : ''}
     ${challenge.herramienta_descarga ? `<p><a class="download" href="${escapeHtml(challenge.herramienta_descarga)}" download>Descargar FOCA v3.4.7.1 (.zip)</a></p><small>Descomprime el ZIP en Windows y ejecuta FOCA.exe.</small>` : ''}
     <p>${challenge.tools.map((tool) => `<span class="chip">${escapeHtml(tool)}</span>`).join('')}</p>
     <div class="eth"><b>Ética:</b> ${escapeHtml(challenge.etica)}</div>
@@ -751,6 +752,18 @@ function openChallenge(challenge) {
     updateHintBtn();
   };
   $('#bv').onclick = () => validateFlag(challenge);
+  if (challenge.tipo === 'Upload Web') {
+    $('#bu').onclick = async () => {
+      const fi = $('#fu').files[0], o = $('#ur');
+      if (!fi) { o.className = 'bad'; o.textContent = 'Selecciona un archivo .txt primero.'; return; }
+      const fd = new FormData(); fd.append('archivo', fi);
+      try {
+        const res = await fetch('/api/upload-reto9', { method: 'POST', body: fd }), d = await res.json();
+        if (d.ok) { o.className = 'ok'; o.innerHTML = `¡Acceso concedido! Bandera en: <a href="${d.url}" target="_blank" rel="noopener">${d.url}</a>`; }
+        else { o.className = 'bad'; o.textContent = d.msg || 'Acceso denegado.'; }
+      } catch (e) { o.className = 'bad'; o.textContent = 'Error al subir el archivo.'; }
+    };
+  }
 }
 
 async function validateFlag(challenge) {

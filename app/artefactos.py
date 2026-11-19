@@ -35,18 +35,54 @@ b32 = base64.b32encode(F[7].encode()).decode().rstrip("="); ch = [b32[i:i + 12] 
 names = ["www.google.com", "corpx.lab"] + [f"{i}-{c}.datos.corpx.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]
 names.insert(3, "cdn.example.org")
 w("reto07_dns.pcap", [Ether() / IP(src=A, dst="8.8.8.8") / UDP(sport=5300 + i, dport=53) / DNS(rd=1, qd=DNSQR(qname=n)) for i, n in enumerate(names)])
-# 9 icmp
-f = F[9].encode(); pk = []
-for i in range(0, len(f), 4):
-    pk.append(Ether() / IP(src=A, dst=B) / ICMP(type=8, id=0x1337, seq=i // 4) / Raw(f[i:i + 4]))
-    pk.append(Ether() / IP(src=A, dst=B) / ICMP(type=8, id=1, seq=i // 4) / Raw(b"abcdefghijklmnopqrstuvwabcdefghi"))
-w("reto09_icmp.pcap", pk)
-# 12 knock
-w("reto12_knock.pcap", [Ether() / IP(src=A, dst=B) / TCP(sport=41000 + i, dport=d, flags="S", seq=i) for i, d in enumerate([22, 7003, 80, 7001, 443, 7002, 8080])])
-# 8 imagen
-im = Image.new("RGB", (192, 192), "#16324f"); d = ImageDraw.Draw(im)
-for i in range(0, 192, 12): d.rectangle([i, 0, i + 6, 191], fill="#1f4f7a")
-d.ellipse([56, 56, 136, 136], fill="#f5a524"); d.text((64, 90), "CorpX", fill="#101c19")
-pi = PngInfo(); pi.add_text("Author", "agente-corpx"); pi.add_text("Comment", base64.b64encode(F[8].encode()).decode())
-im.save(os.path.join(O, "reto08_foto.png"), pnginfo=pi)
+# 9 upload
+upload_txt = ("# ===========================================================\n"
+              "# CORPX SISTEMA DE VERIFICACION DE IDENTIDAD v2.1\n"
+              "# ===========================================================\n"
+              "# Instrucciones:\n"
+              "#   1. Rellena el campo 'nombre' con tu identificador.\n"
+              "#   2. Sube este archivo usando el boton del reto.\n"
+              "# ===========================================================\n"
+              "\n"
+              "nombre=agente_nuevo\n"
+              "rol=visitante\n"
+              "nivel_acceso=0\n"
+              "estado=pendiente\n"
+              "\n"
+              "# ------ NOTAS INTERNAS (solo lectura) ------\n"
+              "# El validador ejecuta internamente:\n"
+              "#   VERIFICAR rol='<rol>' AND nivel_acceso='<nivel>'\n"
+              "# -------------------------------------------\n"
+              "# ADVERTENCIA: El modulo v2.1 NO sanitiza los valores\n"
+              "# del archivo. Caracteres como la comilla simple (')\n"
+              "# podrian alterar la logica de verificacion.\n"
+              "# -------------------------------------------\n")
+open(os.path.join(O, "reto09_upload.txt"), "w", encoding="utf-8").write(upload_txt)
+# 9 archivo de configuracion interno expuesto por la inyeccion
+config_interno = ("# ===========================================================\n"
+                  "# CORPX - Configuracion de Acceso Interno\n"
+                  "# CLASIFICACION: CONFIDENCIAL\n"
+                  "# Version: 2.1.0  |  Ultima modificacion: 2024-11-07\n"
+                  "# ===========================================================\n"
+                  "DB_HOST=db-internal.corpx.lab\n"
+                  "DB_PORT=5432\n"
+                  "DB_USER=corpx_admin\n"
+                  f"AUTH_FLAG={F[9]}\n"
+                  "SESSION_TIMEOUT=1800\n"
+                  "DEBUG=false\n"
+                  "# ===========================================================\n")
+open(os.path.join(O, "reto09_config_interno.txt"), "w", encoding="utf-8").write(config_interno)
+# 11 archivo clasificado - accesible solo con el token de API descubierto via SQL injection en reto 10
+sellado_txt = ("# ===========================================================\n"
+               "# CORPX - Archivo Clasificado de Administracion\n"
+               "# ACCESO: RESTRINGIDO - Solo operativos con token valido\n"
+               "# ===========================================================\n"
+               "SISTEMA=corpx-intranet\n"
+               "NIVEL_ACCESO=ALTO\n"
+               f"FLAG_SISTEMA={F[11]}\n"
+               "FECHA_EXPIRACION=2025-12-31\n"
+               "# ===========================================================\n")
+open(os.path.join(O, "reto11_sellado.txt"), "w", encoding="utf-8").write(sellado_txt)
+# 12 archivo de bandera para el servidor SSH (colocar como ~/.flag en 192.168.56.105)
+open(os.path.join(O, "reto12_dotflag.txt"), "w", encoding="utf-8").write(F[12] + "\n")
 print("artefactos listos:", sorted(os.listdir(O)))

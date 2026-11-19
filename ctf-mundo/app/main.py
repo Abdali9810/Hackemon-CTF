@@ -1,4 +1,4 @@
-import os, time, hmac, secrets, sqlite3, threading, socketserver
+import os, re, time, hmac, secrets, sqlite3, threading, socketserver
 from collections import defaultdict, deque
 from flask import Flask, jsonify, request, send_from_directory, make_response
 from markupsafe import escape
@@ -15,6 +15,21 @@ def retos(): return jsonify(PUB)
 def descargar_foca():
     return send_from_directory("/downloads", "FOCA-v3.4.7.1.zip", as_attachment=True)
 tries = defaultdict(deque)
+@game.post("/api/upload-reto9")
+def upload_reto9():
+    if 'archivo' not in request.files: return jsonify(ok=False, msg='No se recibió ningún archivo.')
+    f = request.files['archivo']
+    if not f.filename.lower().endswith('.txt'): return jsonify(ok=False, msg='Solo se aceptan archivos .txt.')
+    content = f.read(8192).decode('utf-8', errors='ignore')
+    fields = {}
+    for line in content.split('\n'):
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            k, v = line.split('=', 1); fields[k.strip()] = v.strip()
+    rol = fields.get('rol', '')
+    if re.search(r"'\s*or\s*'", rol, re.IGNORECASE) or re.search(r"'.*--", rol):
+        return jsonify(ok=True, msg='¡Inyección exitosa! Acceso concedido.', url='http://127.0.0.1:8081/archivos/verificacion')
+    return jsonify(ok=False, msg='Acceso denegado. El campo "rol" no ha sido modificado correctamente.')
 @game.post("/api/validar")
 def validar():
     q = tries[request.remote_addr]; now = time.time()
@@ -52,6 +67,9 @@ def cfg(): return f"# respaldo\nDB_HOST=db.hackemon.lab\nAPI_KEY={KEY}\n", 200, 
 def apiflag():
     if request.headers.get("X-API-Key") == KEY: return F[11] + "\n"
     return "Falta X-API-Key valida\n", 401
+@obj.get("/archivos/verificacion")
+def upload_flag():
+    return f'<h1>Acceso concedido</h1><p>El sistema fue comprometido mediante inyección en el archivo de configuración.</p><p>Flag: {F[9]}</p>'
 
 class Q(socketserver.ThreadingTCPServer):
     allow_reuse_address = True; daemon_threads = True
@@ -65,12 +83,6 @@ def tcp(port, fn):
     threading.Thread(target=Q(("0.0.0.0", port), H).serve_forever, daemon=True).start()
 tcp(9003, lambda s, ip, ts: s.sendall(b"220 Hackemon-FTP listo\r\n"))
 tcp(9007, lambda s, ip, ts: s.sendall(f"HACKEMON-BEACON/1.0 {F[1]}\r\n".encode()))
-SEQ, ev = [7003, 7001, 7002], defaultdict(list)
-for p in SEQ: tcp(p, lambda s, ip, ts, p=p: ev[ip].append((p, ts)))
-def door(s, ip, ts):
-    now = time.time(); last = [p for p, t in sorted(ev[ip], key=lambda e: e[1]) if now - t < 15][-3:]
-    s.sendall((F[12] + "\n" if last == SEQ else "Acceso denegado\n").encode())
-tcp(7100, door)
 threading.Thread(target=lambda: serve(obj, host="0.0.0.0", port=8081, threads=8), daemon=True).start()
 print("Mundo CTF listo: http://127.0.0.1:8080", flush=True)
 serve(game, host="0.0.0.0", port=8080, threads=8)
