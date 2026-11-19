@@ -56,6 +56,9 @@ def admin_login():
           and hmac.compare_digest(str(d.get("clave", "")).encode(), ADMIN_TR_PASS.encode()))
     if not ok: return jsonify(ok=False), 401
     return jsonify(ok=True, respuestas=F)
+@game.get("/descargas/reto12_dotflag.txt")
+def descargar_reto12_flag():
+    return send_from_directory(os.path.join(B, "artefactos"), "reto12_dotflag.txt", as_attachment=True)
 @game.get("/descargas/<path:n>")
 def desc(n): return send_from_directory(os.path.join(B, "artefactos"), n, as_attachment=True)
 
@@ -80,25 +83,46 @@ FORM = page("Portal", FORM_BODY)
 def portal():
     if request.method == "GET": return FORM
     u, c = request.form.get("u", ""), request.form.get("c", "")
-    db = sqlite3.connect(":memory:"); db.execute("create table usuarios(u,c,rol)")
+    db = sqlite3.connect(":memory:")
+    db.execute("create table usuarios(u,c,rol)")
+    db.execute("create table tokens(nombre,valor)")
     db.executemany("insert into usuarios values(?,?,?)", [("admin", ADMIN, "admin"), ("invitado", "invitado", "user")])
+    db.execute("insert into tokens values(?,?)", ("api_acceso", KEY))
     try: row = db.execute(f"SELECT u,rol FROM usuarios WHERE u='{u}' AND c='{c}'").fetchone()  # vulnerable A PROPOSITO
     except Exception as e: return page("Portal", FORM_BODY + f'<p class="msg err">Error SQL: {escape(e)}</p>'), 500
     if not row: return page("Portal", FORM_BODY + '<p class="msg err">Credenciales inválidas</p>'), 401
     body = f'<p class="msg ok">Hola {escape(row[0])} ({row[1]})</p>'
-    if row[1] == "admin": body += f'<p>Flag recuperada: <span class=flag>{F[10]}</span></p>'
+    if row[1] == "admin":
+        tok = db.execute("SELECT valor FROM tokens WHERE nombre='api_acceso'").fetchone()
+        api_key = tok[0] if tok else KEY
+        body += (f'<p>Acceso de administrador concedido.</p>'
+                 f'<p>Flag del sistema: <span class=flag>{F[10]}</span></p>'
+                 f'<p>Token de API del sistema (guárdalo para el siguiente reto):<br>'
+                 f'<code style="background:#1a1a2e;color:#e0e0e0;padding:0.3rem 0.6rem;'
+                 f'border-radius:4px;word-break:break-all;display:inline-block">{api_key}</code></p>')
     return page("Portal", body)
 @obj.get("/backup", strict_slashes=False)
 def bk(): return page("Backup", '<h2>Acceso restringido</h2><p class="msg err">Este directorio está fuera de tu alcance, agente.</p>'), 403
-@obj.get("/backup/config.bak")
-def cfg(): return f"# respaldo\nDB_HOST=db.corpx.lab\nAPI_KEY={KEY}\n", 200, {"Content-Type": "text/plain"}
 @obj.get("/api/flag")
 def apiflag():
-    if request.headers.get("X-API-Key") == KEY: return F[11] + "\n"
+    if request.headers.get("X-API-Key") == KEY:
+        return send_from_directory(os.path.join(B, "artefactos"), "reto11_sellado.txt", as_attachment=True)
     return "Falta X-API-Key valida\n", 401
 @obj.get("/archivos/verificacion")
 def upload_flag():
-    return page("Verificación", f'<h2>Acceso concedido</h2><p>El sistema fue comprometido mediante inyección en el archivo de configuración.</p><p>Flag: <span class=flag>{F[9]}</span></p>')
+    cfg_path = os.path.join(B, "artefactos", "reto09_config_interno.txt")
+    try:
+        with open(cfg_path, encoding="utf-8") as fh:
+            contenido = fh.read()
+    except FileNotFoundError:
+        contenido = f"AUTH_FLAG={F[9]}\n"
+    return page("Verificación",
+        '<h2>Acceso concedido</h2>'
+        '<p>La inyección en el archivo de configuración expuso el sistema interno. '
+        'Se ha filtrado el siguiente archivo:</p>'
+        f'<pre style="background:#1a1a2e;color:#e0e0e0;padding:1rem;border-radius:6px;'
+        f'overflow-x:auto"><code>{escape(contenido)}</code></pre>'
+        '<p><small>Busca el campo <strong>AUTH_FLAG</strong> y úsalo como bandera.</small></p>')
 
 class Q(socketserver.ThreadingTCPServer):
     allow_reuse_address = True; daemon_threads = True
@@ -110,7 +134,7 @@ def tcp(port, fn):
             try: fn(s.request, s.client_address[0], s.client_address[2])
             except Exception: pass
     threading.Thread(target=Q(("0.0.0.0", port), H).serve_forever, daemon=True).start()
-tcp(9003, lambda s, ip, ts: s.sendall(b"220 Hackemon-FTP listo\r\n"))
+tcp(9003, lambda s, ip, ts: s.sendall(b"220 CorpX FTP Server - Standard control port: 21\r\n"))
 threading.Thread(target=lambda: serve(obj, host="0.0.0.0", port=8081, threads=8), daemon=True).start()
 print("Mundo CTF listo: http://127.0.0.1:8080", flush=True)
 serve(game, host="0.0.0.0", port=8080, threads=8)
