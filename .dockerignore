@@ -1,6 +1,11 @@
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+app/artefactos/
 .git/
-.venv/
-venv/
-__pycache__/
-*.py[cod]
 .env
+*.tar
+*.tar.gz
+hackemon_soluciones.pdf
+reto07_icmp/__pycache__/
+ctf-mundo/
