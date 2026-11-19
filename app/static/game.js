@@ -128,7 +128,9 @@ async function submitLogin(e){e.preventDefault();const name=$('#login-name').val
   try{const res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:name,clave})}),d=await res.json();
    if(!d.ok){err.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Contraseña incorrecta.';return}ADMIN=d.respuestas}
   catch(x){err.textContent='No se pudo contactar al servidor.';return}}
- PLAYER=name;try{localStorage.setItem('ctfm1-name',name)}catch(x){}
+ const character=characters.find(ch=>ch.id===chosenCharacterId)||characters[0];
+ const characterSurname=character.name.charAt(0)+character.name.slice(1).toLocaleLowerCase('es');
+ PLAYER=`${name} ${characterSurname}`;try{localStorage.setItem('ctfm1-name',name)}catch(x){}
  $('#login').style.display='none';startGame()}
 function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='none';window.HackemonMusic.setScene('world');
  if(!S.t0)S.t0=Date.now();persist();
@@ -236,6 +238,7 @@ const GQ=[
  (zn,n,who)=>`Guardia: Otra vez tú, ${who}. Insistir no es un exploit válido. Te faltan ${4-n} criaturas de ${zn}.`];
 let lastGQ=-1;
 function guardTalk(d){if(tm-lastT<=90)return;lastT=tm;const z=d.z-1;if(unl(d.z)){toast(ADMIN&&nz(z)<4?`Guardia: Sí, señor administrador. Pase usted, no vaya a ser que me cambie la contraseña.`:`Guardia: ¡Bien hecho, ${PLAYER}! Puedes cruzar hacia ${ZN[d.z]}.`,7000);return}
+ window.HackemonMusic.sfx.guardDenied();
  let i;do i=Math.floor(Math.random()*GQ.length);while(i===lastGQ);lastGQ=i;toast(GQ[i](ZN[z],nz(z),PLAYER),8000)}
 function guard(x,y,open){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
  f('rgba(0,0,0,.25)',3,13,10,3);f('#1c2a4a',4,10,3,5);f('#1c2a4a',9,10,3,5);f('#2c4a8a',3,6,10,5);f('#f8d030',7,7,2,2);f('#1c2a4a',3,9,10,1);

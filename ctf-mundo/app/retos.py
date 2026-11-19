@@ -3,6 +3,11 @@ F = {i: f for i, f in enumerate([
  "Port21", "HACKEMON{http_sin_cifrar_se_ve_todo}", "HACKEMON{ftp_en_texto_plano}",
  "HACKEMON{dns_tambien_filtra_datos}", "HACKEMON{SNMP_Win32_Users_Enumerated}", "HACKEMON{icmp_oculta_mensajes}",
  "HACKEMON{inyeccion_sql_clasica}", "HACKEMON{enumerar_antes_de_atacar}", "HACKEMON{golpea_las_puertas_en_orden}"], 1)}
+F[5] = "192.168.56.105"
+ALTERNATIVE_FLAGS = {
+    5: ("192.168.56.110", "192.168.56.109", "192.168.56.101",
+        "192.168.56.100", "192.168.56.106"),
+}
 D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
 def r(i, z, x, y, titulo, cri, tipo, brief, objetivo, tools, etica, pistas, descarga=None,
@@ -30,8 +35,13 @@ RETOS = [
    ["Agrega -v después de curl para mostrar los detalles de la conexión.",
     "Agrega --connect-timeout 5 para limitar la espera a cinco segundos.",
     "Usa ftp://127.0.0.1:9003/. El servicio local usa 9003 para la prueba; ¿cuál es el puerto estándar de control de FTP?"]),
- r(5,2,20,7,"Login en claro","Tiburín","Red","Alguien inició sesión en un sitio sin HTTPS. Encuentra su clave en la captura.",D+"reto05_http.pcap",["Wireshark","tshark"],E_PCAP,
-   ["Filtro de Wireshark: http.request.method == \"POST\"","Abre el paquete y mira el cuerpo del formulario.","tshark -r reto05_http.pcap -Y http.request.method==POST -T fields -e urlencoded-form.value"]),
+ r(5,2,20,7,"¿Quién está conectado?","Arpín","Red / Descubrimiento de hosts",
+   "Descubre qué equipos de prueba responden en la red aislada del laboratorio e identifica una dirección IPv4 válida.",
+   "En una red Host-Only del laboratorio, realiza un descubrimiento de hosts del segmento 192.168.56.0/24 con Nmap. Ingresa una de las IP detectadas, sin llaves ni prefijo.",
+   ["Nmap","ARP","ICMP"],E_SCAN,
+   ["Configura la máquina virtual en modo anfitrión (Host-Only), no en modo puente.",
+    "Tu máquina de análisis y los equipos de prueba deben pertenecer al mismo segmento 192.168.56.0/24.",
+    "En la terminal de Kali, ejecuta `sudo nmap -sn 192.168.56.0/24` para descubrir hosts, sin escanear puertos."]),
  r(6,2,27,9,"FTP sin cifrar","Ftupo","Red","Una sesión FTP quedó grabada. Recupera la contraseña.",D+"reto06_ftp.pcap",["Wireshark"],E_PCAP,
    ["Filtro: ftp","Clic derecho en un paquete > Follow > TCP Stream.","Busca el comando PASS."]),
  r(7,2,21,25,"Datos por DNS","Dnsito","Red","Un equipo comprometido sacó datos escondidos en consultas DNS.",D+"reto07_dns.pcap",["Wireshark","tshark","base32"],E_PCAP,
