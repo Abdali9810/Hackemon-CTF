@@ -1,8 +1,8 @@
 const $=s=>document.querySelector(s),c=$('#c'),g=c.getContext('2d');
 const TS=16,W=48,H=32,PAS=[0,1,4,5,7],ZN=['','Pradera Recon','Bosque de Redes','Cumbre Root'],ZC=['','#00c8d4','#e06010','#6020c0'];
 const MED=[,'Medalla Lupa','Medalla Paquete','Medalla Root'],mcount=()=>Object.keys(S.medals||{}).length;
-let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0;
-let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0;
+let R=[],T=[],S={cap:{},hints:{}},mode='load',A=null,captureResult=null,pendingMedal=null,tm=0,keys={},tmr,modeBeforeMenu='map',modeBeforeConfirm='menu',confirmOk=null,confirmReturnFocus=null,PLAYER='',ADMIN=null,DLG=null,lastZ=0;
+let startCreatures=[],startWaves=[],startWaveAt=0,startWaveCount=0,startLastFrame=0,briefingT0=0,briefingZone=1,briefingMascot=null;
 let playerOutfitColor='#2fa84f';
 let playerAccessory='cap';
 const characters=[
@@ -88,16 +88,16 @@ function updateMusicButton(enabled){const label=enabled?'Desactivar música':'Ac
 function refreshPauseMenu(){const caps=$('#menu-stat-caps'),med=$('#menu-stat-medals'),pts=$('#menu-stat-score'),pl=$('#menu-player');
  if(caps)caps.textContent=`${total()}/12`;if(med)med.textContent=`${mcount()}/3`;if(pts)pts.textContent=String(score());
  if(pl)pl.textContent=PLAYER?`Entrenador(a) ${PLAYER}`:'Explorando el mundo'}
-function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};refreshPauseMenu();$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true');document.body.classList.add('menu-open')}
+function openMenu(){if(!['map','panel','inv'].includes(mode))return;modeBeforeMenu=mode;mode='menu';keys={};refreshPauseMenu();$('#game-menu').style.display='grid';$('#menu-toggle').setAttribute('aria-expanded','true');document.body.classList.add('menu-open');$('#menu-inventory').focus()}
 async function toggleMusic(){try{updateMusicButton(await window.HackemonMusic.toggle())}catch(e){console.error('No se pudo cambiar la música.',e);toast('No se pudo cambiar la música en este navegador.',4000)}}
-function setSoundPanel(open){$('#sound-panel').hidden=!open;$('#music-toggle').setAttribute('aria-expanded',String(open));if(open)window.HackemonMusic.unlock().catch(()=>{})}
+function setSoundPanel(open){$('#sound-panel').hidden=!open;$('#music-toggle').setAttribute('aria-expanded',String(open));if(open){window.HackemonMusic.unlock().catch(()=>{});$('#sound-music').focus()}else $('#music-toggle').focus()}
 function initVolumes(){const v=window.HackemonMusic.getVolumes();
  for(const k of ['music','sfx']){const el=$('#vol-'+k),out=$('#vol-'+k+'-val'),show=()=>out.textContent=el.value+'%';el.value=Math.round(v[k]*100);show();
   el.oninput=()=>{show();window.HackemonMusic.setVolume(k,el.value/100)};
   if(k==='sfx')el.onchange=()=>window.HackemonMusic.sfx.step('grass')}}
-function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open')}
-function openGameConfirm(opts){modeBeforeConfirm=mode;mode='confirm';confirmOk=opts.onConfirm||null;const panel=$('#game-confirm .game-confirm-panel');panel.dataset.tone=opts.tone||'warn';$('#confirm-eyebrow').textContent=opts.eyebrow||'Asistente del laboratorio';$('#confirm-title').textContent=opts.title||'¿Estás seguro?';$('#confirm-message').textContent=opts.message||'';$('#confirm-yes').textContent=opts.yes||'Sí, continuar';$('#confirm-no').textContent=opts.no||'No, volver';$('#game-confirm').hidden=false;$('#confirm-no').focus()}
-function closeGameConfirm(accepted){$('#game-confirm').hidden=true;const back=modeBeforeConfirm;mode=back;const fn=confirmOk;confirmOk=null;if(accepted&&fn)fn()}
+function closeMenu(){if(mode!=='menu')return;mode=modeBeforeMenu;$('#game-menu').style.display='none';$('#menu-toggle').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open');if(mode==='map')$('#menu-toggle').focus();else if(mode==='panel')$('#fl').focus();else if(mode==='inv')$('#inv .trainer-foot button').focus()}
+function openGameConfirm(opts){modeBeforeConfirm=mode;confirmReturnFocus=document.activeElement;mode='confirm';confirmOk=opts.onConfirm||null;const panel=$('#game-confirm .game-confirm-panel');panel.dataset.tone=opts.tone||'warn';$('#confirm-eyebrow').textContent=opts.eyebrow||'Asistente del laboratorio';$('#confirm-title').textContent=opts.title||'¿Estás seguro?';$('#confirm-message').textContent=opts.message||'';$('#confirm-yes').textContent=opts.yes||'Sí, continuar';$('#confirm-no').textContent=opts.no||'No, volver';$('#game-confirm').hidden=false;$('#confirm-no').focus()}
+function closeGameConfirm(accepted){$('#game-confirm').hidden=true;const back=modeBeforeConfirm;mode=back;const fn=confirmOk,returnFocus=confirmReturnFocus;confirmOk=null;confirmReturnFocus=null;if(accepted&&fn)fn();else if(returnFocus?.isConnected)returnFocus.focus()}
 function applyRestart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();if(mode!=='map')mode='map';$('#panel').style.display=$('#inv').style.display='none';window.HackemonMusic.setScene('world');toast('Nueva partida iniciada. ¡Vuelve a resolver los retos!')}
 function applyExitToStart(){S={cap:{},hints:{},skin:playerOutfitColor};persist();PLAYER='';ADMIN=null;P.x=48;P.y=256;P.dir=0;P.mv=0;keys={};closeMenu();$('#panel').style.display=$('#inv').style.display='none';$('#dialog').hidden=true;$('#menu-toggle').style.display='none';$('#landing-screen').hidden=false;$('#story-screen').hidden=true;$('#character-screen').hidden=true;$('#start').style.display='grid';mode='start';window.HackemonMusic.setScene('menu')}
 function restartChallenges(){openGameConfirm({tone:'warn',eyebrow:'Registro Hackédex',title:'¿Nueva partida?',message:'¿Quieres comenzar otra aventura? Se borrarán todas las criaturas capturadas y tu progreso en el mundo. No podrás recuperarlo.',yes:'Sí, empezar de cero',no:'No, seguir jugando',onConfirm:applyRestart})}
@@ -114,7 +114,7 @@ function captureSuccess(r,msg){closeAll(false);toast(msg);mode='enc';$('#menu-to
   if(pendingMedal){S.medals=S.medals||{};S.medals[r.zona]=Date.now();
    if(R.filter(q=>q.zona===r.zona).every(q=>!S.hints[q.id])){S.pure=S.pure||{};S.pure[r.zona]=Date.now()}}persist();captureResult=r;mode='capture-result';
   const q=r.id===2?['Reto completado','¡Qué sorpresa! Por fin una neurona hizo conexión. Continúa, a ver cuánto te dura la suerte.']:pickQuip(r);
-  $('#capture-title').textContent=q[0];$('#capture-text').textContent=q[1];$('#capture-message').style.display='grid'}}}
+  $('#capture-title').textContent=q[0];$('#capture-text').textContent=q[1];$('#capture-message').style.display='grid';$('#capture-continue').focus()}}}
 function showDialog(who,lines,then){mode='dialog';keys={};DLG={who,lines,i:0,then};$('#menu-toggle').style.display='none';$('#dialog-who').textContent=who;$('#dialog-text').textContent=lines[0];$('#dialog').hidden=false}
 function nextDialog(){if(!DLG)return;if(++DLG.i<DLG.lines.length){$('#dialog-text').textContent=DLG.lines[DLG.i];return}
  const then=DLG.then;DLG=null;$('#dialog').hidden=true;mode='map';keys={};$('#menu-toggle').style.display='block';if(then)then()}
@@ -141,24 +141,42 @@ function startGame(){P.characterId=chosenCharacterId;$('#start').style.display='
  if(ADMIN)lines.push('Modo administrador activado: veo las respuestas, puedo saltar retos y los guardias me dejan pasar. Solo para pruebas.');
  lines.push('¿Listos? ¡Que empiece la aventura!');
  showDialog(PLAYER,lines,()=>toast('Camina hasta una cápsula brillante y pulsa Espacio.',4000))}
-function drawBriefingMascot(now){const canvas=$('#briefing-mascot');if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);const t=now-briefingT0,bob=Math.sin(t/280)*3,sq=Math.sin(t/120)>0?1:0,s=3,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.floor(x)*s,Math.floor(y+bob)*s,s,s)};
- const ox=11,oy=10;
- [[1,1,'#c87810'],[2,1,'#f8d030'],[3,1,'#f8d030'],[4,1,'#f8d030'],[5,1,'#c87810'],[0,2,'#f8d030'],[1,2,'#ffe566'],[2,2,'#ffe566'],[3,2,'#ffe566'],[4,2,'#ffe566'],[5,2,'#ffe566'],[6,2,'#f8d030'],[1,3,'#e0a820'],[2,3,'#ffe566'],[3,3,'#ffe566'],[4,3,'#ffe566'],[5,3,'#e0a820'],[2,4,'#202830'],[3,4,'#202830'],[1,5,'#f8d030'],[2,5,'#ffe566'],[3,5,'#ffe566'],[4,5,'#ffe566'],[5,5,'#f8d030'],[0,6,'#f8d030'],[1,6,'#e0a820'],[2,6,'#e0a820'],[3,6,'#e0a820'],[4,6,'#e0a820'],[5,6,'#e0a820'],[6,6,'#f8d030']].forEach(([x,y,c])=>px(ox+x,oy+y,c));
- const tail=sq?[[6,5],[7,6],[8,7]]:[[6,5],[7,4],[8,3]];tail.forEach(([x,y])=>px(ox+x,oy+y,'#f8d030'));
- px(ox-1,oy+2,'#f8d030');px(ox+7,oy+2,'#f8d030');
- for(let i=0;i<6;i++){const a=t/160+i*1.05,d=8+Math.sin(t/90+i)*2,cx=ox+5+Math.cos(a)*d,cy=oy+4+Math.sin(a)*d*.7;ctx.fillStyle=i%2?'#ffe566':'#fff';ctx.fillRect(cx*s,cy*s,s,s)}
- const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;if(reduced){ctx.fillStyle='#ffe566';ctx.fillRect((ox+9)*s,(oy+1)*s,s,s);ctx.fillRect((ox-1)*s,(oy+4)*s,s,s)}}
-function openZone1Briefing(){briefingT0=performance.now();mode='zone-briefing';$('#zone-briefing').hidden=false;$('#menu-toggle').style.display='none';$('#zone-briefing-title').textContent=PLAYER?`¡Felicidades, ${PLAYER}!`:'¡Felicidades, entrenador!';$('#zone-briefing-medal').src=medalImg(1).toDataURL();$('#zone-briefing-medal-name').textContent=MED[1];drawBriefingMascot(performance.now());$('#zone-briefing-continue').focus();window.HackemonMusic.sfx.caught?.()}
-function closeZone1Briefing(){S.briefingZ1=Date.now();persist();$('#zone-briefing').hidden=true;mode='map';$('#menu-toggle').style.display='block';burst(P.x+8,P.y+8,ZC[1],40);toast(`¡${MED[1]} conseguida${(S.pure||{})[1]?' · sin pistas':''}! Completaste ${ZN[1]} · [I] inventario`,6000)}
+const ZONE_BRIEFINGS={
+ 1:{
+  story:'¡Medalla Lupa para ti! Superaste los primeros desafíos y descubriste que las pistas sí sirven; Pikachu agradece que ya no le pidas resolverlo todo. Celebra, entrenador: el Bosque de Redes te espera.'
+ },
+ 2:{
+  story:'¡Medalla Paquete conseguida! Encontraste vecinos, reconociste a Apache y pescaste chismes en ICMP y SNMP. El router pide vacaciones; tú puedes presumir hasta que aparezcan DNS, SQL y puertos tímidos.'
+ },
+ 3:{
+  story:'¡Lo lograste! Completaste los 12 retos y conquistaste la Cumbre Root. CorpX ha sido derrotada, tus Hackémon están a salvo y el profesor promete no volver a decir “¿probaste reiniciar?”. Bueno… no lo promete.'
+ }
+};
+function drawBriefingMascot(now){const canvas=$('#briefing-mascot');if(!canvas||!briefingMascot)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,t=now-briefingT0,x=reduced?w/2:w/2+Math.sin(t/430)*13,y=reduced?55:55+Math.sin(t/190)*5;
+ ctx.fillStyle='rgba(0,0,0,.24)';ctx.beginPath();ctx.ellipse(x,h-19,17,5,0,0,Math.PI*2);ctx.fill();
+ if(!reduced){for(let i=0;i<3;i++){const a=t/520+i*Math.PI*2/3,px=x+Math.cos(a)*27,py=y+Math.sin(a)*20;ctx.fillStyle=i%2?'#ffe566':'#fff';ctx.fillRect(Math.round(px),Math.round(py),3,3)}}
+ ctx.drawImage(mk(briefingMascot),Math.round(x-21),Math.round(y-21),42,42)}
+function openZoneBriefing(zone,mascot){briefingZone=zone;briefingMascot=mascot||R.find(r=>r.zona===zone);briefingT0=performance.now();const text=ZONE_BRIEFINGS[zone];
+ mode='zone-briefing';$('#zone-briefing').hidden=false;$('#menu-toggle').style.display='none';
+ $('#zone-briefing-title').textContent=PLAYER?`¡Felicidades, ${PLAYER}!`:'¡Felicidades, entrenador!';
+ $('#zone-briefing-kicker').textContent=zone===3?'Liga Hackémon completada · 12/12 retos':`${ZN[zone]} · ${nz(zone)}/${R.filter(r=>r.zona===zone).length} retos`;
+ $('#zone-briefing-medal').src=medalImg(zone).toDataURL();$('#zone-briefing-medal-name').textContent=MED[zone];
+ $('#briefing-story-text').textContent=text.story;
+ const stats=$('#briefing-final-stats');stats.hidden=zone!==3;
+ if(zone===3){const hints=Object.values(S.hints||{}).reduce((sum,count)=>sum+count,0),elapsed=Math.floor((Date.now()-(S.t0||Date.now()))/1000);stats.textContent=`Puntuación: ${score()} pts · Medallas: ${mcount()}/3 · Pistas usadas: ${hints} · Tiempo: ${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;$('#zone-briefing-continue').textContent='¡Seguir explorando!'}
+ else $('#zone-briefing-continue').textContent='¡Listo para la siguiente zona!';
+ drawBriefingMascot(performance.now());$('#zone-briefing-continue').focus();window.HackemonMusic.sfx.caught?.()}
+function closeZoneBriefing(){S[`briefingZ${briefingZone}`]=Date.now();persist();$('#zone-briefing').hidden=true;mode='map';$('#menu-toggle').style.display='block';burst(P.x+8,P.y+8,ZC[briefingZone],40);toast(`¡${MED[briefingZone]} conseguida${(S.pure||{})[briefingZone]?' · sin pistas':''}! Completaste ${ZN[briefingZone]} · [I] inventario`,6000)}
 function continueAfterCapture(){if(mode!=='capture-result')return;$('#capture-message').style.display='none';window.HackemonMusic.setScene('world');
- const medalEarned=pendingMedal,capturedName=captureResult?.criatura;pendingMedal=null;captureResult=null;
- if(medalEarned===1&&!S.briefingZ1){openZone1Briefing();return}
+ const medalEarned=pendingMedal,capturedCreature=captureResult,capturedName=captureResult?.criatura;pendingMedal=null;captureResult=null;
+ if((medalEarned===1||medalEarned===2||medalEarned===3&&total()===12)&&!S[`briefingZ${medalEarned}`]){openZoneBriefing(medalEarned,capturedCreature);return}
  mode='map';$('#menu-toggle').style.display='block';
  if(medalEarned){window.HackemonMusic.sfx.caught();burst(P.x+8,P.y+8,ZC[medalEarned],40);toast(`¡${MED[medalEarned]} conseguida${(S.pure||{})[medalEarned]?' · sin pistas':''}! Completaste ${ZN[medalEarned]} · [I] inventario`,6000)}
  else if(capturedName)toast(`¡Capturaste a ${capturedName}! (${total()}/12) · [I] inventario`,4000);
  if(total()===12){const hh=Object.values(S.hints||{}).reduce((a,b)=>a+b,0),s=Math.floor((Date.now()-(S.t0||Date.now()))/1000);
   $('#liga-stats').innerHTML=`Puntuación: <b>${score()} pts</b> · Medallas: ${mcount()}/3 · Pistas usadas: ${hh} · Tiempo: ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-  $('#liga').style.display='grid';mode='liga'}}
+  $('#liga').style.display='grid';mode='liga';$('#liga-continue').focus()}}
 function build(){
  for(let y=0;y<H;y++){T[y]=[];for(let x=0;x<W;x++){const n=hs(x,y),z3=x>=33;let v=z3?5:0;
   if(x===0||y===0||x===W-1||y===H-1)v=z3?6:2;else if([15,16,31,32].includes(x))v=3;
@@ -401,12 +419,12 @@ function enc(){const{r,kind}=A,k=++A.k;encSfx(kind,k);const cx=170,cy=64,gy=104,
   else if(k<195){const ph=(k-105)%30;ball(cx,gy,6,ph<20?Math.sin(ph/20*Math.PI*2)*.5:0,zc)}
   else if(k<235){ball(cx,gy,6,0,zc);drawFX(0,0);g.fillStyle='#ffe84a';for(let i=0;i<8;i++){const a=i*Math.PI/4,d=(k-195)*.8;g.fillRect(cx+Math.cos(a)*d,gy+Math.sin(a)*d,2,2)}}
   else{A.done();A=null;return}}}
-function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none'}
+function closeAll(resumeMusic=true){if(mode==='panel'&&resumeMusic)window.HackemonMusic.setScene('world');$('#panel').style.display=$('#inv').style.display='none';if(mode!=='enc')mode='map';$('#menu-toggle').style.display=mode==='map'?'block':'none';if(mode==='map')$('#menu-toggle').focus()}
 function openInv(){mode='inv';const v=$('#inv');
  const medals=[1,2,3].map(z=>`<div class="medal ${(S.medals||{})[z]?'':'off'}">${(S.pure||{})[z]?`<img class=pur src="${pureImg().toDataURL()}" title="Zona sin pistas">`:''}<img src="${medalImg(z).toDataURL()}" alt=""><small>${(S.medals||{})[z]?esc(MED[z]):'???'}</small></div>`).join('');
  const cards=R.map(r=>{const got=S.cap[r.id];
  return `<div class="card ${got?'':'off'}"><img src="${got?challengeLogo(r):sil(r).toDataURL()}" alt=""><b>${got?esc(r.criatura):'???'}</b><small>${got?esc(r.tipo)+' · Zona '+r.zona:'Reto '+r.id+' · Zona '+r.zona}</small>${got?`<small>${esc(r.titulo)}</small><small class="${earned(r)<basePts(r)?'bad':'ok'}">${earned(r)} pts${revHints(r)?' (-'+revHints(r)*15+' pistas)':''}</small>`:''}</div>`}).join('');
- v.innerHTML=`<article class="inv-screen trainer-ui"><header class="trainer-head"><p class="eyebrow">Registro del entrenador</p><h2>Hackédex · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small></header><div class="trainer-stat-grid inv-stat-grid" aria-label="Resumen"><div class="trainer-stat-card trainer-stat-card--1"><span class="trainer-stat-value">${total()}/12</span><span class="trainer-stat-label">Capturados</span></div><div class="trainer-stat-card trainer-stat-card--2"><span class="trainer-stat-value">${mcount()}/3</span><span class="trainer-stat-label">Medallas</span></div><div class="trainer-stat-card trainer-stat-card--3"><span class="trainer-stat-value">${score()}</span><span class="trainer-stat-label">Puntos</span></div></div><section class="trainer-block" aria-labelledby="inv-medals-label"><h3 id="inv-medals-label" class="trainer-section-label">Gimnasios y medallas</h3><div class="medals">${medals}</div></section><section class="trainer-block" aria-labelledby="inv-dex-label"><h3 id="inv-dex-label" class="trainer-section-label">Criaturas registradas</h3><div class="grid">${cards}</div></section><footer class="trainer-foot"><button type="button" onclick="closeAll()">Cerrar (Esc)</button></footer></article>`;v.style.display='block'}
+ v.innerHTML=`<article class="inv-screen trainer-ui"><header class="trainer-head"><p class="eyebrow">Registro del entrenador</p><h2>Hackédex · ${total()}/12</h2><small>Cada criatura es un reto resuelto.</small></header><div class="trainer-stat-grid inv-stat-grid" aria-label="Resumen"><div class="trainer-stat-card trainer-stat-card--1"><span class="trainer-stat-value">${total()}/12</span><span class="trainer-stat-label">Capturados</span></div><div class="trainer-stat-card trainer-stat-card--2"><span class="trainer-stat-value">${mcount()}/3</span><span class="trainer-stat-label">Medallas</span></div><div class="trainer-stat-card trainer-stat-card--3"><span class="trainer-stat-value">${score()}</span><span class="trainer-stat-label">Puntos</span></div></div><section class="trainer-block" aria-labelledby="inv-medals-label"><h3 id="inv-medals-label" class="trainer-section-label">Gimnasios y medallas</h3><div class="medals">${medals}</div></section><section class="trainer-block" aria-labelledby="inv-dex-label"><h3 id="inv-dex-label" class="trainer-section-label">Criaturas registradas</h3><div class="grid">${cards}</div></section><footer class="trainer-foot"><button type="button" onclick="closeAll()">Cerrar (Esc)</button></footer></article>`;v.style.display='block';v.querySelector('.trainer-foot button').focus()}
 function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h=revHints(r);const p=$('#panel'),pistas=Array.isArray(r.pistas)?r.pistas:[],adminAnswer=ADMIN&&ADMIN[r.id]?String(ADMIN[r.id]).replace(/^CORPX\{(.*)\}$/i,'$1'):'';
  const dl=r.descarga?challengeDl(r.descarga,'Archivo del reto','Descarga el archivo en tu equipo antes de resolver el reto'):'',foca=r.herramienta_descarga?challengeDl(r.herramienta_descarga,'FOCA (.zip)','Descarga y ejecuta FOCA para revisar metadatos'):'',dls=dl||foca?`<div class="challenge-downloads" aria-label="Descargas">${dl}${foca}</div>`:'',pen=revHints(r)*15;
  const hintInit=h>0?`<section id="ph" class="challenge-hints" aria-live="polite">${challengeHintHtml(pistas,h)}</section>`:'<section id="ph" class="challenge-hints" hidden aria-live="polite"></section>';
@@ -420,10 +438,13 @@ function openPanel(r){mode='panel';$('#menu-toggle').style.display='block';let h
    else{o.className='challenge-result bad';o.textContent=res.status===429?'Demasiados intentos. Espera un minuto.':'Bandera incorrecta. Revisa el formato y vuelve a intentarlo.'}}
   catch(e){o.className='challenge-result bad';o.textContent='No se pudo contactar al servidor.'}}}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(mode==='dialog'){if([' ','enter'].includes(k)){e.preventDefault();nextDialog()}return}
- if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if([' ','enter'].includes(k)){e.preventDefault();closeGameConfirm(true);return}return}
- if(mode==='zone-briefing'){if([' ','enter'].includes(k)){e.preventDefault();closeZone1Briefing();return}return}
+ if(mode==='confirm'){if(k==='escape'){e.preventDefault();closeGameConfirm(false);return}if(k==='enter'){e.preventDefault();closeGameConfirm(true);return}if(k===' '&&e.target.closest('#confirm-yes,#confirm-no'))return;if(k===' '){e.preventDefault();closeGameConfirm(true);return}return}
+ if(mode==='zone-briefing'){if([' ','enter'].includes(k)){e.preventDefault();closeZoneBriefing();return}return}
+ if(mode==='capture-result'){if([' ','enter'].includes(k)){e.preventDefault();continueAfterCapture();return}return}
+ if(mode==='liga'){if([' ','enter'].includes(k)){e.preventDefault();$('#liga-continue').click();return}return}
  if(mode==='login'){if(e.key==='Escape'){$('#login').style.display='none';mode='start'}return}if(e.key==='Escape'){if(mode==='menu')closeMenu();else if(mode==='panel'||mode==='inv')closeAll();else if(mode==='map')openMenu();return}
  if(e.target.tagName==='INPUT'){if(k==='enter'&&mode==='panel')$('#bv').click();return}
+ if([' ','enter'].includes(k)&&e.target.closest('button,a,[role="button"]'))return;
  if(mode==='start'&&!$('#character-screen').hidden&&(k==='arrowleft'||k==='arrowright')){e.preventDefault();browseCharacter(k==='arrowleft'?-1:1);return}
  if(k==='m'){if(mode==='menu')closeMenu();else openMenu();return}keys[k]=1;
  if(mode==='map'){if([' ','enter'].includes(k)){e.preventDefault();interact()}else if(k==='i')openInv();else if(k==='n'){S.mini=S.mini===false;persist()}else if(k.startsWith('arrow'))e.preventDefault()}
@@ -436,7 +457,7 @@ updateMusicButton(false);
 $('#menu-toggle').onclick=()=>mode==='menu'?closeMenu():openMenu();
 $('#menu-close').onclick=closeMenu;
 $('#capture-continue').onclick=continueAfterCapture;
-$('#zone-briefing-continue').onclick=closeZone1Briefing;
+$('#zone-briefing-continue').onclick=closeZoneBriefing;
 $('#liga-continue').onclick=()=>{$('#liga').style.display='none';mode='map'};
 $('#menu-music').onclick=toggleMusic;
 $('#menu-inventory').onclick=()=>{closeMenu();$('#panel').style.display='none';openInv()};
