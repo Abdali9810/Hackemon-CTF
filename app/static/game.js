@@ -315,10 +315,13 @@ const HACKER_LINES=[
  'El port knocking es un saludo secreto: golpea los puertos en el orden correcto.',
  'Las cabeceras HTTP hablan. curl -i y escucha.',
  'En mi época el root se ganaba con paciencia, no con pistas.'];
+const CLOWN_LINES=[
+ 'El sufrimiento de los estudiantes me mantiene joven jajajaja'];
 const NPCS=[
  {x:6,y0:14,y1:24,who:'Niña detective',lines:GIRL_LINES,draw:'girl',last:-1},
  {x:17,y0:12,y1:26,who:'Viejo pescador',lines:FISH_LINES,draw:'fisher',last:-1},
- {x:40,y0:12,y1:26,who:'Hacker retirado',lines:HACKER_LINES,draw:'hacker',last:-1}];
+ {x:40,y0:12,y1:26,who:'Hacker retirado',lines:HACKER_LINES,draw:'hacker',last:-1},
+ {x:46,y0:12,y1:26,who:'El Payaso Ops',lines:CLOWN_LINES,draw:'clown',last:-1}];
 const npcPos=n=>{for(let y=n.y0;y<n.y1;y++)if(T[y]&&(T[y][n.x]===0||T[y][n.x]===5))return{x:n.x,y};return{x:n.x,y:n.y0}};
 let lastNPC=0;
 function npcTalk(n){if(mode!=='map'||tm-lastNPC<=90)return;lastNPC=tm;
@@ -338,7 +341,25 @@ function hacker(x,y){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)
  f('rgba(0,0,0,.25)',3,13,10,3);f('#2a2a35',4,10,3,5);f('#2a2a35',9,10,3,5);f('#26334e',3,6,10,5);f('#1c2438',3,9,10,1);
  f('#f0c8a0',4,3,8,4);f('#26334e',3,0,10,3);f('#372b28',4,2,8,1);f('#222',5,4,1,1);f('#222',9,4,1,1);
  f('#4a5568',6,8,8,5);f('#75d9e8',7,9,6,3)}
-const NPC_DRAW={girl,fisher,hacker};
+function clown(x,y){const f=(c,a,b,w,h)=>{g.fillStyle=c;g.fillRect(x+a,y+b,w,h)};
+ f('rgba(0,0,0,.28)',3,13,10,2);               // shadow
+ f('#c02020',3,10,4,5);f('#c02020',9,10,4,5); // red shoes
+ f('#1e449a',3,6,10,5);f('#162e72',3,9,10,2); // blue suit
+ f('#c8a870',3,8,2,1);f('#c8a870',11,7,1,2);  // patches
+ f('#e8d018',7,7,2,5);f('#c01818',7,8,1,1);f('#c01818',8,10,1,1); // tie+dots
+ // cara de piel ancha y visible (y0..y7)
+ f('#f0c8a0',4,0,8,7);
+ // 3 picos mohawk sobre la cara
+ f('#201008',5,-2,2,3);f('#201008',7,-3,2,5);f('#201008',9,-2,2,3); // picos
+ f('#201008',6,0,4,2);                         // base mohawk (centro, lados quedan calvos)
+ // gafas desde y2 — deja y0-y1 de piel calva visible
+ f('#111828',4,2,4,3);f('#111828',8,2,4,3);f('#111828',7,3,2,1); // lentes+puente
+ f('#90a8c0',5,2,2,1);f('#90a8c0',9,2,2,1);  // brillo lente
+ f('#111',5,3,1,1);f('#111',9,3,1,1);         // pupilas
+ // barba y nariz
+ f('#201008',4,6,8,3);                         // barba completa
+ f('#e02828',7,5,2,2)}                         // nariz redonda encima
+const NPC_DRAW={girl,fisher,hacker,clown};
 function interact(){const r=near();
  if(!r){const tx=Math.round(P.x/16),ty=Math.round(P.y/16);for(const n of NPCS){const p=npcPos(n);if(Math.abs(p.x-tx)+Math.abs(p.y-ty)<=1){npcTalk(n);return}}return}
  if(S.cap[r.id])return toast(`Ya capturaste a ${r.criatura}.`);
