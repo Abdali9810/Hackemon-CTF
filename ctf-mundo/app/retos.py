@@ -1,7 +1,7 @@
 F = {i: f for i, f in enumerate([
  "HACKEMON{foca_en_los_metadatos}", "2600:3c01:e000:3e6::6d4e:7061", "HACKEMON{las_cabeceras_hablan}",
  "Port21", "HACKEMON{http_sin_cifrar_se_ve_todo}", "HACKEMON{ftp_en_texto_plano}",
- "HACKEMON{dns_tambien_filtra_datos}", "HACKEMON{metadatos_que_delatan}", "HACKEMON{icmp_oculta_mensajes}",
+ "HACKEMON{dns_tambien_filtra_datos}", "HACKEMON{SNMP_Win32_Users_Enumerated}", "HACKEMON{icmp_oculta_mensajes}",
  "HACKEMON{inyeccion_sql_clasica}", "HACKEMON{enumerar_antes_de_atacar}", "HACKEMON{golpea_las_puertas_en_orden}"], 1)}
 D = "http://127.0.0.1:8080/descargas/"
 W = "http://127.0.0.1:8081"
@@ -36,8 +36,13 @@ RETOS = [
    ["Filtro: ftp","Clic derecho en un paquete > Follow > TCP Stream.","Busca el comando PASS."]),
  r(7,2,21,25,"Datos por DNS","Dnsito","Red","Un equipo comprometido sacó datos escondidos en consultas DNS.",D+"reto07_dns.pcap",["Wireshark","tshark","base32"],E_PCAP,
    ["Filtro: dns.qry.name contains \"datos.hackemon.lab\"","Une los fragmentos en orden (el número antes del guion).","Está en Base32; añade '=' hasta que el largo sea múltiplo de 8 y usa base32 -d."]),
- r(8,2,28,23,"Foto delatora","Exifox","Forense","Una foto filtrada guarda más de lo que muestra.",D+"reto08_foto.png",["exiftool","strings","base64"],"Los metadatos pueden exponer ubicación y autoría. Bórralos antes de publicar imágenes.",
-   ["exiftool reto08_foto.png","Mira el campo Comment.","Parece Base64: echo '...' | base64 -d"]),
+ r(8,2,28,23,"El Sensor SNMP de MIBito","MIBito","Enumeración UDP",
+   "El servidor Hackémon expone su servicio SNMP en el puerto 161/UDP. Usa Nmap con el script snmp-win32-users para enumerar las cuentas del sistema y encontrar la bandera oculta.",
+   "192.168.56.105",["nmap","snmpwalk","onesixtyone"],
+   "El escaneo UDP sin autorización puede considerarse intrusión. El alcance de este reto es exclusivamente el servidor de laboratorio 192.168.56.105.",
+   ["SNMP opera sobre UDP, no TCP. Necesitas el flag -sU en nmap para sondear el puerto 161.",
+    "Ejecuta: sudo nmap -v -sU -p 161 --script=snmp-win32-users 192.168.56.105",
+    "Revisa la sección 'Account' en la salida de nmap. Una de las cuentas tiene un nombre fuera de lo ordinario — ese es tu flag."]),
  r(9,3,36,6,"Ping sospechoso","Pingüex","Red","Un ping con identificador raro lleva un mensaje en el campo de datos.",D+"reto09_icmp.pcap",["Wireshark","tshark","xxd"],E_PCAP,
    ["Filtro: icmp.ident == 4919","Cada paquete lleva unos pocos bytes en Data.","tshark -r reto09_icmp.pcap -Y icmp.ident==4919 -T fields -e data.data | tr -d '\\n' | xxd -r -p"]),
  r(10,3,43,8,"Portal vulnerable","Inyectol","Web","El portal de login arma su consulta SQL concatenando texto. Entra como admin.",W+"/portal",["navegador","curl","burp (opcional)"],"La inyección SQL contra sistemas ajenos es delito. Defensa: consultas parametrizadas.",
