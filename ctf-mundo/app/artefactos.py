@@ -30,9 +30,6 @@ pi = PngInfo(); pi.add_text("Author", "Hackémon"); pi.add_text("Comment", F[1].
 im.save(os.path.join(O, "reto01_foca.png"), pnginfo=pi)
 # 4 hash
 open(os.path.join(O, "reto04_hash.txt"), "w").write(hashlib.md5(b"sunshine").hexdigest() + "\n")
-# 6 ftp
-m = [(False, b"220 Hackemon FTP\r\n"), (True, b"USER agente\r\n"), (False, b"331 Password required\r\n"), (True, b"PASS " + F[6].encode() + b"\r\n"), (False, b"230 Login ok\r\n"), (True, b"QUIT\r\n"), (False, b"221 Bye\r\n")]
-w("reto06_ftp.pcap", sess(A, B, 40010, 21, m, 1.7e9)[0])
 # 7 dns
 b32 = base64.b32encode(F[7].encode()).decode().rstrip("="); ch = [b32[i:i + 12] for i in range(0, len(b32), 12)]
 names = ["www.google.com", "hackemon.lab"] + [f"{i}-{c}.datos.hackemon.lab" for i, c in enumerate(ch)] + ["update.microsoft.com"]

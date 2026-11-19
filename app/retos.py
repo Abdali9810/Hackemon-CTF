@@ -1,6 +1,6 @@
 F = {i: f for i, f in enumerate([
  "CORPX{foca_en_los_metadatos}", "2600:3c01:e000:3e6::6d4e:7061", "220 IANA FTP Server",
- "Port21", "CORPX{http_sin_cifrar_se_ve_todo}", "CORPX{ftp_en_texto_plano}",
+ "Port21", "CORPX{http_sin_cifrar_se_ve_todo}", "Apache httpd 2.4.68",
  "burbuja", "CORPX{SNMP_Win32_Users_Enumerated}", "CORPX{icmp_oculta_mensajes}",
  "CORPX{inyeccion_sql_clasica}", "CORPX{enumerar_antes_de_atacar}", "CORPX{golpea_las_puertas_en_orden}"], 1)}
 F[5] = "192.168.56.105"
@@ -52,8 +52,14 @@ RETOS = [
     "Tu máquina de análisis y los equipos de prueba deben pertenecer al mismo segmento 192.168.56.0/24.",
     "En la terminal de Kali, ejecuta `sudo nmap -sn 192.168.56.0/24` para descubrir hosts, sin escanear puertos."],
    plain=True),
- r(6,2,27,9,"FTP sin cifrar","Ftupo","Red","Una sesión FTP quedó grabada. Recupera la contraseña.",D+"reto06_ftp.pcap",["Wireshark"],E_PCAP,
-   ["Filtro: ftp","Clic derecho en un paquete > Follow > TCP Stream.","Busca el comando PASS."]),
+ r(6,2,27,9,"Apache a la vista","Apachín","Red / Puertos y servicios",
+   "La máquina objetivo del reto anterior tiene un servidor web. Identifica con Nmap el puerto HTTP abierto y la versión exacta de Apache.",
+   "La IP objetivo es 192.168.56.105. Ejecuta `sudo nmap -sS -sV -p 80 192.168.56.105` para identificar el servicio HTTP y su versión. Ingresa el nombre y la versión tal como aparecen en el resultado, sin llaves ni prefijo.",
+   ["Nmap","Apache HTTP Server","TCP"],E_SCAN,
+   ["En la máquina virtual Linux aislada autorizada, instala e inicia Apache: `sudo apt update && sudo apt install -y apache2 && sudo systemctl enable --now apache2`.",
+    "Nmap combina `-sS` para detectar puertos TCP abiertos y `-sV` para identificar la versión del servicio.",
+    "Limita el escaneo al puerto 80 de la IP objetivo `192.168.56.105`: `sudo nmap -sS -sV -p 80 192.168.56.105`. En el resultado, identifica el nombre de Apache y su versión exacta."],
+   plain=True),
  r(7,2,21,25,"Ping sospechoso","Pingüex","Red",
    "El servidor de CorpX responde a los pings de forma extraña. Captura el tráfico mientras le haces ping y fíjate bien en lo que te devuelve.",
    "192.168.56.105",["ping","Wireshark","tcpdump"],E_PCAP,

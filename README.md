@@ -11,6 +11,14 @@ docker compose up --build -d
 Juego: http://localhost:8080
 Sitio objetivo de los retos web: http://localhost:8081
 
+## Retos de red locales (5 y 6)
+
+Realiza estos ejercicios únicamente en máquinas virtuales propias o autorizadas,
+conectadas a una red **Host-Only** aislada. El reto 5 descubre hosts del segmento
+`192.168.56.0/24`; el reto 6 identifica Apache en el puerto 80 de la IP objetivo
+que encontraste, usando `sudo nmap -sS -sV -p 80 <IP_OBJETIVO>`. No ejecutes
+estos escaneos contra redes públicas o equipos ajenos.
+
 En el reto 1 puedes descargar la imagen de análisis y el instalador de FOCA incluido en FOCA-v3.4.7.1.zip. En Windows, descomprime el ZIP y ejecuta FOCA.exe para inspeccionar los metadatos de la imagen.
 
 Controles: flechas / WASD mover · Espacio abrir una cápsula/reto · I inventario · M abrir el menú · Esc volver/cerrar. Desde el menú puedes pausar la música, abrir el inventario, reiniciar los retos o volver al idocker compose up --build -dnicio. Para pasar de zona hay que capturar las 4 criaturas de la zona anterior (un guardia bloquea el puente).
